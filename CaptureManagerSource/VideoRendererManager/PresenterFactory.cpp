@@ -70,17 +70,16 @@ namespace CaptureManager
 					{
 						do
 						{
-#ifdef ENABLE
-							if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
-							{
-								LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
-									aHandle,
-									aOutputNodeAmount,
-									aPtrPresenter,
-									aPtrPtrMixer);
-							}
-							else
-#endif //ENABLE
+							//if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
+							//{
+							//	LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
+							//		aHandle,
+							//		aOutputNodeAmount,
+							//		aPtrPresenter,
+							//		aPtrPtrMixer);
+							//}
+							//else
+
 							{
 								LOG_INVOKE_FUNCTION(createDirect3D9PresenterFromWindowHandler,
 									aHandle,
@@ -93,20 +92,20 @@ namespace CaptureManager
 
 						if (FAILED(lresult))
 						{
-#ifdef ENABLE
-							if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
-							{
-								LOG_INVOKE_FUNCTION(createDirect3D11Presenter,
-									aHandle,
-									nullptr,
-									aOutputNodeAmount,
-									aPtrPresenter,
-									aPtrPtrMixer);
 
-								lresult = S_FALSE;
-							}
-							else
-#endif //ENABLE
+							//if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
+							//{
+							//	LOG_INVOKE_FUNCTION(createDirect3D11Presenter,
+							//		aHandle,
+							//		nullptr,
+							//		aOutputNodeAmount,
+							//		aPtrPresenter,
+							//		aPtrPtrMixer);
+
+							//	lresult = S_FALSE;
+							//}
+							//else
+
 							{
 								LOG_INVOKE_FUNCTION(createFromSharedHandler,
 									aHandle,
@@ -118,7 +117,8 @@ namespace CaptureManager
 					}
 					else
 					{
-#ifdef ENABLE
+						LOG_CHECK_PTR_MEMORY(aPtrUnkTarget);
+
 						CComQIPtrCustom<ISwapChainPanelNative> lSwapChainPanelNative = aPtrUnkTarget;
 
 						if (lSwapChainPanelNative)
@@ -166,9 +166,10 @@ namespace CaptureManager
 
 							break;
 						}
-#endif //ENABLE
 						
-						CComQIPtrCustom<IDirect3DSurface9> lDirect3DSurface9 = aPtrUnkTarget;
+						CComPtrCustom<IDirect3DSurface9> lDirect3DSurface9;
+
+						LOG_INVOKE_QUERY_INTERFACE_METHOD(aPtrUnkTarget, &lDirect3DSurface9);
 
 						if (lDirect3DSurface9)
 						{

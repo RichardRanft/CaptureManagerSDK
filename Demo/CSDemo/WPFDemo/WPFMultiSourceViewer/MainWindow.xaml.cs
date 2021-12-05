@@ -1,28 +1,4 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using CaptureManagerToCSharpProxy;
+﻿using CaptureManagerToCSharpProxy;
 using CaptureManagerToCSharpProxy.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -58,7 +34,7 @@ namespace WPFMultiSourceViewer
         string[] URLs = {
                             //"http://144.139.80.151:8080/mjpg/video.mjpg", 
                             "http://mx.cafesydney.com:8888/mjpg/video.mjpg",
-                            "http://118.127.105.138:8080/-wvhttp-01-/GetOneShot?image_size=640x480&frame_count=1000000000#.XxAFnqhd7LI.link"
+                            "http://mx.cafesydney.com:8888/mjpg/video.mjpg"
                         };
 
         uint mStreams = 1;

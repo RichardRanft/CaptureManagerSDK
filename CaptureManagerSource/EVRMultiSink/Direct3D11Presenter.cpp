@@ -31,6 +31,8 @@ SOFTWARE.
 #include "../Common/GUIDs.h"
 #include <Windows.ui.xaml.media.dxinterop.h>
 
+extern void OutputLog(const char *szFormat, ...);
+
 namespace EVRMultiSink
 {
 	namespace Sinks
@@ -64,7 +66,9 @@ namespace EVRMultiSink
 				UINT gNumFeatureLevels = ARRAYSIZE(gFeatureLevels);
 
 
-				UINT Direct3D11Presenter::mUseDebugLayer(D3D11_CREATE_DEVICE_VIDEO_SUPPORT);
+				UINT Direct3D11Presenter::mUseDebugLayer(
+					D3D11_CREATE_DEVICE_VIDEO_SUPPORT | 
+					D3D11_CREATE_DEVICE_BGRA_SUPPORT);
 
 				Direct3D11Presenter::Direct3D11Presenter():
 					mLastTime(0)
@@ -211,6 +215,67 @@ namespace EVRMultiSink
 
 							mD3D11Device.Release();
 							
+							mID3D11Texture2D->GetDevice(&mD3D11Device);
+
+							LOG_CHECK_PTR_MEMORY(mD3D11Device);
+
+							CComPtrCustom<ID3D11VideoDevice> lDX11VideoDevice;
+
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(mD3D11Device, &lDX11VideoDevice);
+
+							LOG_INVOKE_FUNCTION(createSample, Direct3D11Presenter::RenderTexture);
+
+							LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
+
+							LOG_CHECK_PTR_MEMORY(mDeviceManager);
+
+							LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+								mD3D11Device,
+								mDeviceResetToken);
+
+							mImmediateContext.Release();
+
+							mD3D11Device->GetImmediateContext(&mImmediateContext);
+
+							LOG_CHECK_PTR_MEMORY(mImmediateContext);
+
+							CComPtrCustom<ID3D10Multithread> lMultiThread;
+
+							// Need to explitly set the multithreaded mode for this device
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(mImmediateContext, &lMultiThread);
+
+							LOG_CHECK_PTR_MEMORY(lMultiThread);
+
+							BOOL lbRrsult = lMultiThread->SetMultithreadProtected(TRUE);
+
+							break;
+						}
+
+						CComPtrCustom<ID3D11Resource> l_Resource;
+
+						CComPtrCustom<ID3D11Texture2D> l_SharedTexture;
+
+						lresult = mD3D11Device->OpenSharedResource(aHandle, IID_PPV_ARGS(&l_Resource));
+
+						if (SUCCEEDED(lresult))
+						{
+							lresult = l_Resource->QueryInterface(IID_PPV_ARGS(&l_SharedTexture));
+						}
+
+						lID3D11Texture2D = l_SharedTexture;
+
+						if (lID3D11Texture2D)
+						{
+							mSwapChain1.Release();
+
+							mID3D11Texture2D.Release();
+
+							mID3D11Texture2D = lID3D11Texture2D;
+
+							LOG_CHECK_PTR_MEMORY(mID3D11Texture2D);
+
+							mD3D11Device.Release();
+
 							mID3D11Texture2D->GetDevice(&mD3D11Device);
 
 							LOG_CHECK_PTR_MEMORY(mD3D11Device);
@@ -621,25 +686,27 @@ namespace EVRMultiSink
 					return lresult;
 				}
 
+				MFTIME mLastTime1 = 0;
+
 				HRESULT Direct3D11Presenter::ProcessFrame(BOOL aImmediate)
 				{
 					HRESULT lresult(E_FAIL);
 
 					do
 					{
-						if (aImmediate == FALSE)
-						{
-							auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+						//if (aImmediate == FALSE)
+						//{
+						//	auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
 
-							if ((lCurrentTime - mLastTime) < mVideoFrameDuration)
-							{
-								lresult = S_OK;
+						//	if ((lCurrentTime - mLastTime) < mVideoFrameDuration)
+						//	{
+						//		lresult = S_OK;
 
-								break;
-							}
+						//		break;
+						//	}
 
-							mLastTime = lCurrentTime;
-						}
+						//	mLastTime = lCurrentTime;
+						//}
 
 						std::lock_guard<std::mutex> lLock(mAccessMutex);
 

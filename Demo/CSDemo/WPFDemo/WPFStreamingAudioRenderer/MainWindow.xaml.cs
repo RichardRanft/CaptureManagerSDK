@@ -136,7 +136,7 @@ namespace WPFStreamingAudioRenderer
                 mISession.closeSession();
 
                 mISession = null;
-
+                
                 mTitleTxtBlk.Text = "Start playing";
 
                 return;
@@ -199,7 +199,7 @@ namespace WPFStreamingAudioRenderer
                     float lLevel = 0;
 
                     mISARVolumeControl.getChannelVolume(lSARSinkOutputNode, 0, out lLevel);
-
+                    
                     mRVolume.ValueChanged += (s,ev)=> {
                         mISARVolumeControl.setChannelVolume(lSARSinkOutputNode, 0, (float)ev.NewValue);
                     };

@@ -45,6 +45,7 @@ enum {
 	VENDOR_ARM = 0x000013B5,  // Mali
 	VENDOR_QUALCOMM = 0x00005143,
 	VENDOR_IMGTEC = 0x00001010,  // PowerVR
+	VENDOR_MICROSOFT_BASIC_RENDER_DRIVER = 0x00001414,
 };
 
 #ifndef AMD_BUG_FIX
@@ -588,6 +589,7 @@ namespace CaptureManager
 
 						auto lRootXMLElement = lxmlDoc.append_child(L"Filters");
 
+#if 0
 						if (lCAPS.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_BRIGHTNESS)
 						{
 							auto lFilterXMLElement = lRootXMLElement.append_child(L"Filter");
@@ -673,6 +675,8 @@ namespace CaptureManager
 							}
 						}
 
+#endif // 0
+
 						if (lCAPS.FilterCaps & D3D11_VIDEO_PROCESSOR_FILTER_CAPS_EDGE_ENHANCEMENT)
 						{
 							auto lFilterXMLElement = lRootXMLElement.append_child(L"Filter");
@@ -744,7 +748,7 @@ namespace CaptureManager
 						LOG_CHECK_PTR_MEMORY(lVideoContext);
 
 						D3D11_VIDEO_PROCESSOR_FILTER lFilter = (D3D11_VIDEO_PROCESSOR_FILTER)aParametrIndex;
-
+						
 						lVideoContext->VideoProcessorSetStreamFilter(
 							mVideoProcessor,
 							aInputStreamID,
@@ -1117,6 +1121,32 @@ namespace CaptureManager
 						LOG_CHECK_PTR_MEMORY(mOutputMediaType);
 
 						LOG_CHECK_PTR_MEMORY(mDeviceManager);
+
+
+						using namespace pugi;
+
+						xml_document lxmlDoc;
+
+						auto ldeclNode = lxmlDoc.append_child(node_declaration);
+
+						ldeclNode.append_attribute(L"version") = L"1.0";
+
+						xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+
+						lcommentNode.set_value(L"XML Document of sources");
+
+						auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+						DataParser::readMediaType(
+							aPtrType,
+							lRootXMLElement);
+
+						std::wstringstream lwstringstream;
+
+						lxmlDoc.print(lwstringstream);
+
+						std::wstring lXMLDocumentString;
+
+						lXMLDocumentString = lwstringstream.str();
 
 
 

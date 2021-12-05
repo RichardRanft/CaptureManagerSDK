@@ -61,9 +61,6 @@ namespace CaptureManagerToCSharpProxy.Interfaces
 
         bool createCompatibleEVRMultiSinkFactory(
             Guid aContainerTypeGUID,
-            out IEVRMultiSinkFactory aSinkFactory);
-
-        
-
+            out IEVRMultiSinkFactory aSinkFactory);      
     }
 }

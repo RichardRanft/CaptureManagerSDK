@@ -1,28 +1,4 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using CaptureManagerToCSharpProxy;
@@ -42,7 +18,7 @@ namespace WPFWebViewerCall
     public partial class MainWindow : Window
     {
         CaptureManager mCaptureManager;
-        
+
         ISampleGrabberCallSinkFactory mSinkFactory = null;
 
         ISession mISession = null;
@@ -67,7 +43,7 @@ namespace WPFWebViewerCall
         IWebCamControl mWebCamControl;
 
         ISampleGrabberCall mISampleGrabberCall = null;
-        
+
         Guid mReadMode;
 
         DispatcherTimer mTimer = new DispatcherTimer();
@@ -92,7 +68,7 @@ namespace WPFWebViewerCall
                 }
                 catch (System.Exception)
                 {
-                    
+
                 }
             }
 
@@ -153,7 +129,7 @@ namespace WPFWebViewerCall
 
         private void mLaunchButton_Click(object sender, RoutedEventArgs e)
         {
-            if(mLaunchButton.Content.ToString() == "Stop")
+            if (mLaunchButton.Content.ToString() == "Stop")
             {
                 mTimer.Stop();
 
@@ -192,7 +168,7 @@ namespace WPFWebViewerCall
 
             uint lStreamIndex = 0;
 
-            if(!uint.TryParse(lNode.Value, out lStreamIndex))
+            if (!uint.TryParse(lNode.Value, out lStreamIndex))
             {
                 return;
             }
@@ -248,13 +224,13 @@ namespace WPFWebViewerCall
             lsampleByteSize = (uint)Math.Abs(lWidthInBytes) * lVideoHeight;
 
             mData = new byte[lsampleByteSize];
-            
+
             var lSinkControl = mCaptureManager.createSinkControl();
 
             string lxmldoc = "";
 
             mCaptureManager.getCollectionOfSinks(ref lxmldoc);
-            
+
             XmlDocument doc = new XmlDocument();
 
             doc.LoadXml(lxmldoc);
@@ -274,13 +250,13 @@ namespace WPFWebViewerCall
             lSinkControl.createSinkFactory(
             mReadMode,
             out mSinkFactory);
-            
+
             mSinkFactory.createOutputNode(
                 MFMediaType_Video,
                 MFVideoFormat_RGB32,
                 lsampleByteSize,
                 out mISampleGrabberCall);
-            
+
             if (mISampleGrabberCall != null)
             {
                 byte[] lData = new byte[lsampleByteSize];
@@ -326,11 +302,11 @@ namespace WPFWebViewerCall
                     lMediaTypeIndex,
                     lSampleGrabberCallNode,
                     out lPtrSourceNode);
-                
+
                 List<object> lSourceMediaNodeList = new List<object>();
 
                 lSourceMediaNodeList.Add(lPtrSourceNode);
-                
+
                 var lSessionControl = mCaptureManager.createSessionControl();
 
                 if (lSessionControl == null)
@@ -369,7 +345,7 @@ namespace WPFWebViewerCall
                 mTimer.Start();
             }
         }
-        
+
         private void updateDisplayImage(Window aWindow, byte[] aData, uint aLength)
         {
             mDisplayImage.Source = FromArray(aData, mVideoWidth, mVideoHeight, mChannels);
@@ -442,6 +418,24 @@ namespace WPFWebViewerCall
 
             int lvalue = (bool)lCheckBox.IsChecked ? 2 : 1;
 
+            if(lvalue == 2)
+            {
+                if(lCheckBox.Parent != null && lCheckBox.Parent is Grid)
+                {
+                    if((lCheckBox.Parent as Grid).Children.Count == 2 && (lCheckBox.Parent as Grid).Children[0] is Slider)
+                    {
+                        lvalue = (int)((lCheckBox.Parent as Grid).Children[0] as Slider).Value;
+
+                        mWebCamControl.setCamParametr(
+                            lindex,
+                            lvalue,
+                            2);
+                    }
+                }
+
+                return;
+            }
+
             int lCurrentValue;
             int lMin;
             int lMax;
@@ -458,9 +452,12 @@ namespace WPFWebViewerCall
                 out lDefault,
                 out lFlag);
 
+            if (lDefault > lMax)
+                lDefault = ((lMax - lMin) / 2) + lMin;
+
             mWebCamControl.setCamParametr(
                 lindex,
-                lCurrentValue,
+                lDefault,
                 lvalue);
 
         }
@@ -488,12 +485,12 @@ namespace WPFWebViewerCall
             {
                 if (aXmlNode == null)
                     break;
-                
+
                 var lAttrNode = aXmlNode.SelectSingleNode("@Value");
 
                 if (lAttrNode == null)
                     break;
-                
+
                 lAttrNode = aXmlNode.SelectSingleNode("@GUID");
 
                 if (lAttrNode == null)

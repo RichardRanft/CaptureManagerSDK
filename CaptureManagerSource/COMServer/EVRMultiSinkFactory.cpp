@@ -201,52 +201,92 @@ namespace CaptureManager
 				{
 				case (int)MethodsEnum::CreateOutputNodes:
 				{
-					LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 3, DISP_E_BADPARAMCOUNT);
-
 					LPVOID lHandle = nullptr;
-
-					if (pDispParams->rgvarg[2].vt == VT_BYREF)
-					{
-						lHandle = pDispParams->rgvarg[2].byref;
-					}
-					else if (pDispParams->rgvarg[2].vt == VT_UI4)
-					{
-						lHandle = (LPVOID)pDispParams->rgvarg[2].uintVal;
-					}
-					else if (pDispParams->rgvarg[2].vt == VT_I4)
-					{
-						lHandle = (LPVOID)pDispParams->rgvarg[2].intVal;
-					}
-					else if (pDispParams->rgvarg[2].vt == VT_UI8)
-					{
-						lHandle = (LPVOID)pDispParams->rgvarg[2].ullVal;
-					}
-					else if (pDispParams->rgvarg[2].vt == VT_I8)
-					{
-						lHandle = (LPVOID)pDispParams->rgvarg[2].llVal;
-					}
-
 
 					CComPtrCustom<IUnknown> lUnkTarget;
 
-					if (pDispParams->rgvarg[1].vt == VT_UNKNOWN && pDispParams->rgvarg[1].punkVal != nullptr)
-					{
-						pDispParams->rgvarg[1].punkVal->QueryInterface(IID_PPV_ARGS(&lUnkTarget));
-					}
-
-
 					DWORD lOutputNodeAmount = 0;
 
-					if (pDispParams->rgvarg[0].vt == VT_UI4)
+					if (pDispParams->cArgs == 3)
 					{
-						lOutputNodeAmount = pDispParams->rgvarg[0].ulVal;
+						if (pDispParams->rgvarg[2].vt == VT_BYREF)
+						{
+							lHandle = pDispParams->rgvarg[2].byref;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_UI4)
+						{
+							lHandle = (LPVOID)pDispParams->rgvarg[2].uintVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_I4)
+						{
+							lHandle = (LPVOID)pDispParams->rgvarg[2].intVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_UI8)
+						{
+							lHandle = (LPVOID)pDispParams->rgvarg[2].ullVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_I8)
+						{
+							lHandle = (LPVOID)pDispParams->rgvarg[2].llVal;
+						}
+											   
+						if ((pDispParams->rgvarg[1].vt == VT_UNKNOWN || pDispParams->rgvarg[1].vt == VT_I8) && pDispParams->rgvarg[1].punkVal != nullptr)
+						{
+							pDispParams->rgvarg[1].punkVal->QueryInterface(IID_PPV_ARGS(&lUnkTarget));
+						}
+
+						if (pDispParams->rgvarg[0].vt == VT_UI4)
+						{
+							lOutputNodeAmount = pDispParams->rgvarg[0].ulVal;
+						}
+						else
+						{
+							lresult = DISP_E_BADVARTYPE;
+
+							break;
+						}
+					}
+					else if (pDispParams->cArgs == 5)
+					{
+						LPVOID ltempHandle = nullptr;
+						
+						if (pDispParams->rgvarg[2].vt == VT_BYREF)
+						{
+							ltempHandle = pDispParams->rgvarg[2].byref;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_UI4)
+						{
+							ltempHandle = (LPVOID)pDispParams->rgvarg[2].uintVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_I4)
+						{
+							ltempHandle = (LPVOID)pDispParams->rgvarg[2].intVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_UI8)
+						{
+							ltempHandle = (LPVOID)pDispParams->rgvarg[2].ullVal;
+						}
+						else if (pDispParams->rgvarg[2].vt == VT_I8)
+						{
+							ltempHandle = (LPVOID)pDispParams->rgvarg[2].llVal;
+						}
+
+						if(ltempHandle != nullptr)
+							((IUnknown*)ltempHandle)->QueryInterface(IID_PPV_ARGS(&lUnkTarget));
+
+						if (pDispParams->rgvarg[0].vt == VT_UI4)
+						{
+							lOutputNodeAmount = pDispParams->rgvarg[0].ulVal;
+						}
+						else
+						{
+							lresult = DISP_E_BADVARTYPE;
+
+							break;
+						}
 					}
 					else
-					{
-						lresult = DISP_E_BADVARTYPE;
-
-						break;
-					}
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 3, DISP_E_BADPARAMCOUNT);
 
 
 					CComPtrCustom<IUnknown> lOutputNode;

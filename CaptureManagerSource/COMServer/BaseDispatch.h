@@ -1,6 +1,7 @@
 #pragma once
 #include "../Common/BaseUnknown.h"
 #include "../Common/Singleton.h"
+#include <comdef.h>
 #include "ClassFactory.h"
 
 namespace CaptureManager
@@ -90,6 +91,13 @@ namespace CaptureManager
 						pVarResult);
 
 				} while (false);
+
+				if (FAILED(lresult) && pExcepInfo != nullptr)
+				{
+					_com_error lerr(lresult);
+
+					pExcepInfo->bstrDescription = SysAllocString(lerr.ErrorMessage());
+				}
 
 				return lresult;
 			}

@@ -568,7 +568,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" />
                                 </ComboBox.Style>
                                 <ComboBox.ItemsSource>
                                     <Binding Source="{StaticResource XmlEncoders}"
-                                     XPath="EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'WMAudio')]|EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'MP3')]" />
+                                     XPath="EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'AAC')]|EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'MP3')]" />
                                 </ComboBox.ItemsSource>
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>

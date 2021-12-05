@@ -23,7 +23,7 @@ namespace CaptureManager
 			
 			HRESULT start();
 
-			HRESULT stop();
+			HRESULT stop(std::function<void(void)> PostStopCallback = nullptr);
 
 			virtual HRESULT STDMETHODCALLTYPE invoke();
 

@@ -83,7 +83,8 @@ namespace CaptureManager
 
 
 	DEFINE_MEDIATYPE_GUID(MFVideoFormat_Y16, FCC('Y16 '));
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_NV21, FCC('NV21'));	
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_NV21, FCC('NV21'));
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_D16, D3DFMT_D16);
 	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L16, D3DFMT_L16);
 	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L8, D3DFMT_L8);
 
@@ -318,6 +319,7 @@ namespace CaptureManager
 		//IF_EQUAL_RETURN(guid, MFVideoFormat_Intel®_Hardware_MediaType_One);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_Y16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_NV21);
+		IF_EQUAL_RETURN(guid, MFVideoFormat_D16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_L16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_L8);
 		IF_EQUAL_RETURN(guid, MEDIASUBTYPE_V410);

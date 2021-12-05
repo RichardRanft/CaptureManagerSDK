@@ -30,11 +30,16 @@ SOFTWARE.
 #include "../LogPrintOut/LogPrintOut.h"
 #include "../DirectXManager/Direct3D11Manager.h"
 #include "../DirectXManager/DXGIManager.h"
+#include "../VideoSurfaceCopierManager/VideoSurfaceCopierManager.h"
 #include "../Common/Singleton.h"
 #include "../ConfigManager/ConfigManager.h"
 #include <list>
 #include <DXGI1_2.h>
 #include <D3d11.h>
+
+extern void OutputLog(const char *szFormat, ...);
+
+MFTIME mLastTime1 = 0;
 
 namespace EVRMultiSink
 {
@@ -1460,7 +1465,140 @@ namespace EVRMultiSink
 
 						LOG_CHECK_STATE_DESCR(!mOutputMediaType, MF_E_NOTACCEPTING);
 
-						(*lIter).second.mSample = aPtrSample;
+						CComPtrCustom<IMFMediaBuffer> lBuffer;
+
+						aPtrSample->GetBufferByIndex(0, &lBuffer);
+
+						LOG_CHECK_PTR_MEMORY(lBuffer);
+
+						do
+						{
+
+							CComPtrCustom<IMFDXGIBuffer> lIMFDXGIBuffer;
+
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(lBuffer, &lIMFDXGIBuffer);
+							
+							(*lIter).second.mSample = aPtrSample;
+
+						} while (false);
+
+						if (FAILED(lresult))
+						{
+							if (!mVideoSurfaceCopier)
+							{
+								CComPtrCustom<IMFVideoSampleAllocatorEx> lVideoSampleAllocator;
+
+								LOG_INVOKE_MF_FUNCTION(MFCreateVideoSampleAllocatorEx,
+									IID_PPV_ARGS(&lVideoSampleAllocator));
+
+								if (lVideoSampleAllocator)
+								{
+									if (mDeviceManager)
+										lVideoSampleAllocator->SetDirectXManager(mDeviceManager);
+								}
+
+								//CComPtrCustom<IUnknown> lUnknown;
+
+								//LOG_INVOKE_FUNCTION(Singleton<Transform::VideoSurfaceCopierManager>::getInstance().createVideoSurfaceCopier,
+								//	lVideoSampleAllocator,
+								//	(*lIter).second.mInputMediaType,
+								//	&lUnknown);
+
+
+								//using namespace pugi;
+
+								//xml_document lxmlDoc;
+
+								//auto ldeclNode = lxmlDoc.append_child(node_declaration);
+
+								//ldeclNode.append_attribute(L"version") = L"1.0";
+
+								//xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+
+								//lcommentNode.set_value(L"XML Document of media type");
+
+								//auto lRootXMLElement = lxmlDoc.append_child(L"MediaType");
+
+								//DataParser::readMediaType(
+								//	(*lIter).second.mInputMediaType,
+								//	lRootXMLElement);
+
+								//std::wstringstream lwstringstream;
+
+								//lxmlDoc.print(lwstringstream);
+
+								//auto l = lwstringstream.str();
+
+
+
+
+								CComPtrCustom<IMFMediaType> lMediaType;
+
+								lMediaType = (*lIter).second.mInputMediaType;
+
+								LOG_CHECK_PTR_MEMORY(lMediaType);
+
+								CComPtrCustom<IMFAttributes> inputAttr;
+
+								LOG_INVOKE_MF_FUNCTION(MFCreateAttributes,
+									&inputAttr, 3);
+
+								LOG_INVOKE_MF_METHOD(SetUINT32,
+									inputAttr,
+									MF_SA_BUFFERS_PER_SAMPLE, 1);
+								LOG_INVOKE_MF_METHOD(SetUINT32,
+									inputAttr,
+									MF_SA_D3D11_USAGE,
+									D3D11_USAGE_DEFAULT);
+								LOG_INVOKE_MF_METHOD(SetUINT32,
+									inputAttr,
+									MF_SA_D3D11_BINDFLAGS,
+									D3D11_BIND_RENDER_TARGET//D3D11_BIND_SHADER_RESOURCE
+								);
+
+								LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
+									lVideoSampleAllocator,
+									1,
+									50,
+									inputAttr.get(),
+									lMediaType.get());
+
+								CComPtrCustom<IUnknown> lUnknown;
+
+								LOG_INVOKE_FUNCTION(Singleton<Transform::VideoSurfaceCopierManager>::getInstance().createVideoSurfaceCopier,
+									lVideoSampleAllocator,
+									lMediaType,
+									&lUnknown);
+
+								LOG_CHECK_PTR_MEMORY(lUnknown);
+
+								LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnknown, &mVideoSurfaceCopier);
+
+								LOG_CHECK_PTR_MEMORY(mVideoSurfaceCopier);
+
+
+								//LOG_INVOKE_POINTER_METHOD(lVideoSampleAllocator, InitializeSampleAllocator, m_InputStreams.size() * 3, (*lIter).second.mInputMediaType);
+							}
+
+							if (mVideoSurfaceCopier)
+							{
+								LOG_INVOKE_POINTER_METHOD(mVideoSurfaceCopier, ProcessInput, 0, aPtrSample, 0);
+
+								MFT_OUTPUT_DATA_BUFFER lOutputSamples{ 0 };
+
+								DWORD lstatus;
+
+								LOG_INVOKE_MF_METHOD(ProcessOutput, mVideoSurfaceCopier, 0, 1, &lOutputSamples, &lstatus);
+
+								if (lOutputSamples.pSample)
+								{
+									(*lIter).second.mSample = lOutputSamples.pSample;
+
+									lOutputSamples.pSample->Release();
+								}
+							}
+						}
+
 
 					} while (false);
 
@@ -1497,6 +1635,7 @@ namespace EVRMultiSink
 						//	lresult = S_OK;
 						//}
 						
+
 						
 						*aPtrStatus = 0;
 
@@ -1514,6 +1653,14 @@ namespace EVRMultiSink
 
 					do
 					{
+
+
+						auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+
+						OutputLog("lCurrentTime - mLastTime1: %i\n", lCurrentTime - mLastTime1);
+
+						mLastTime1 = lCurrentTime;
+
 						LOG_CHECK_PTR_MEMORY(aPtrSample);
 
 						LOG_CHECK_PTR_MEMORY(mVideoProcessor);
@@ -1927,8 +2074,9 @@ namespace EVRMultiSink
 								&lSubStreamDestRect
 								);
 
+							OutputLog("lCurrentStreamIndex: %i\n", lCurrentStreamIndex);
 						}
-																
+											   																
 						lresult = lVideoContext->VideoProcessorBlt(
 							mVideoProcessor,
 							lOutputView,

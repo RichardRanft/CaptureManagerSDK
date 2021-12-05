@@ -42,7 +42,7 @@ SOFTWARE.
 #include "../CaptureDeviceManager/CaptureDeviceManager.h"
 #include "../CaptureSourceManager/CaptureSourceManager.h"
 #include "../VideoRendererManager/VideoRendererFactory.h"
-#include "../WebCamControls/WebCamKernelStreamingControl.h"
+#include "../WebCamControls/WebCamKernelStreamingControlManager.h"
 #include "../EncoderManager/EncoderManager.h"
 #include "../DataParser/DataParser.h"
 #include "../SampleGrabberCall/SampleGrabberCallFactory.h"
@@ -71,6 +71,8 @@ SOFTWARE.
 #include "../CustomisedMixerNode/IAudioMixerControl.h"
 #include "../AudioRendererManager/AudioRendererFactory.h"
 
+#include <ks.h>
+#include <ksproxy.h>
 
 
 extern void InitLogOut();
@@ -601,12 +603,12 @@ namespace CaptureManager
 
 		return lresult;
 	}
-	
+
 	HRESULT CaptureManagerBroker::createWebCamControl(
 		std::wstring& aSymbolicLink,
 		Controls::WebCamControls::IWebCamKernelStreamingControl** aPtrPtrWebCamControl)
 	{
-		using namespace Controls::WebCamControls::CustomisedWebCamControl;
+		using namespace Controls::WebCamControls;
 
 		HRESULT lresult(E_FAIL);
 
@@ -617,9 +619,43 @@ namespace CaptureManager
 
 			LOG_CHECK_STATE_DESCR(aSymbolicLink.empty(), E_INVALIDARG);
 
-			LOG_INVOKE_FUNCTION(WebCamKernelStreamingControl::createIWebCamKernelStreamingControl,
-				aSymbolicLink,
-				aPtrPtrWebCamControl);
+			BOOL lIsCreatedKsControl = FALSE;
+
+			do
+			{
+				CComPtrCustom<IMFMediaSource> lMediaSource;
+
+				CComPtrCustom<IUnknown> lUnkMediaSource;
+
+				LOG_INVOKE_FUNCTION(createSource,
+					aSymbolicLink,
+					&lUnkMediaSource);
+
+				LOG_CHECK_PTR_MEMORY(lUnkMediaSource);
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkMediaSource, &lMediaSource);
+
+				LOG_CHECK_PTR_MEMORY(lMediaSource);
+							   
+				CComPtrCustom<IKsControl> lIKsControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lMediaSource, &lIKsControl);
+
+				LOG_CHECK_PTR_MEMORY(lIKsControl);
+
+				LOG_INVOKE_FUNCTION(WebCamKernelStreamingControlManager::createIWebCamKernelStreamingControlFromKsControl,
+					lIKsControl,
+					aPtrPtrWebCamControl);
+
+				lIsCreatedKsControl = TRUE;
+
+			} while (false);
+
+
+			if(lIsCreatedKsControl == FALSE)
+				LOG_INVOKE_FUNCTION(WebCamKernelStreamingControlManager::createIWebCamKernelStreamingControlFromFile,
+					aSymbolicLink,
+					aPtrPtrWebCamControl);
 
 		} while (false);
 
@@ -2169,19 +2205,77 @@ namespace CaptureManager
 				RendererActivateTopologyNode,
 				&lUnkActivate);
 
-			LOG_CHECK_PTR_MEMORY(lUnkActivate);
+			LOG_CHECK_PTR_MEMORY(lUnkActivate);	
+
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
+
+				UINT lCount = 0;
+
+				auto name = SysAllocString(OLESTR("setPosition"));
 			
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+				DISPID lDISPID = 0;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				DISPPARAMS param;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setPosition,
-				aLeft,
-				aRight,
-				aTop,
-				aBottom);		
+				VARIANTARG args[4];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+				
+
+				VariantInit(&args[3]);
+				V_VT(&args[3]) = VT_R4;
+				V_R4(&args[3]) = aLeft;
+
+				VariantInit(&args[2]);
+				V_VT(&args[2]) = VT_R4;
+				V_R4(&args[2]) = aRight;
+
+				VariantInit(&args[1]);
+				V_VT(&args[1]) = VT_R4;
+				V_R4(&args[1]) = aTop;
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_R4;
+				V_R4(&args[0]) = aBottom;
+
+				param.cArgs = 4;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				SysFreeString(name);				
+			} while (false);
+
+			if (FAILED(lresult))
+			{
+
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setPosition,
+					aLeft,
+					aRight,
+					aTop,
+					aBottom);
+
+			}
 			
 		} while (false);
 
@@ -2259,18 +2353,76 @@ namespace CaptureManager
 
 			LOG_CHECK_PTR_MEMORY(lUnkActivate);
 
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				UINT lCount = 0;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setSrcPosition,
-				aLeft,
-				aRight,
-				aTop,
-				aBottom);
+				auto name = SysAllocString(OLESTR("setSrcPosition"));
 
+				DISPID lDISPID = 0;
+
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
+
+				DISPPARAMS param;
+
+				VARIANTARG args[4];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+
+
+				VariantInit(&args[3]);
+				V_VT(&args[3]) = VT_R4;
+				V_R4(&args[3]) = aLeft;
+
+				VariantInit(&args[2]);
+				V_VT(&args[2]) = VT_R4;
+				V_R4(&args[2]) = aRight;
+
+				VariantInit(&args[1]);
+				V_VT(&args[1]) = VT_R4;
+				V_R4(&args[1]) = aTop;
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_R4;
+				V_R4(&args[0]) = aBottom;
+
+				param.cArgs = 4;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				SysFreeString(name);
+
+			} while (false);
+			
+			if (FAILED(lresult))
+			{
+
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setSrcPosition,
+					aLeft,
+					aRight,
+					aTop,
+					aBottom);
+			}
+			
 		} while (false);
 
 		if (FAILED(lresult))
@@ -2398,14 +2550,57 @@ namespace CaptureManager
 
 			LOG_CHECK_PTR_MEMORY(lUnkActivate);
 
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				UINT lCount = 0;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setOpacity,
-				aOpacity);
+				auto name = SysAllocString(OLESTR("setOpacity"));
+
+				DISPID lDISPID = 0;
+
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
+
+				DISPPARAMS param;
+
+				VARIANTARG args[1];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_R4;
+				V_R4(&args[0]) = aOpacity;
+
+				param.cArgs = 1;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				SysFreeString(name);
+
+			} while (false);
+
+			if (FAILED(lresult))
+			{
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setOpacity,
+					aOpacity);
+			}
 			
 		} while (false);
 
@@ -2455,13 +2650,56 @@ namespace CaptureManager
 
 			LOG_CHECK_PTR_MEMORY(lUnkActivate);
 
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				UINT lCount = 0;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, flush);
+				auto name = SysAllocString(OLESTR("flush"));
+
+				DISPID lDISPID = 0;
+
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
+
+				DISPPARAMS param;
+
+				VARIANTARG args[1];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_R4;
+				V_R4(&args[0]) = 0;
+
+				param.cArgs = 0;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				SysFreeString(name);
+
+			} while (false);
+
+			if (FAILED(lresult))
+			{
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, flush);
+			}
 
 		} while (false);
 
@@ -2753,14 +2991,57 @@ namespace CaptureManager
 
 			LOG_CHECK_PTR_MEMORY(lUnkActivate);
 
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				UINT lCount = 0;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setZOrder, 
-				aZOrder);
+				auto name = SysAllocString(OLESTR("setZOrder"));
+
+				DISPID lDISPID = 0;
+
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
+
+				DISPPARAMS param;
+
+				VARIANTARG args[1];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_UI4;
+				V_UI4(&args[0]) = aZOrder;
+
+				param.cArgs = 1;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				SysFreeString(name);
+
+			} while (false);
+
+			if (FAILED(lresult))
+			{
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, setZOrder,
+					aZOrder);
+			}
 
 		} while (false);
 
@@ -2946,14 +3227,77 @@ namespace CaptureManager
 
 			LOG_CHECK_PTR_MEMORY(lUnkActivate);
 
-			CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+			do
+			{
+				CComPtrCustom<IDispatch> lIDispatch;
 
-			LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lIDispatch);
 
-			LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+				UINT lCount = 0;
 
-			LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, getZOrder,
-				aPtrZOrder);
+				auto name = SysAllocString(OLESTR("getZOrder"));
+
+				DISPID lDISPID = 0;
+
+				lresult = lIDispatch->GetIDsOfNames(GUID_NULL, &name, 1, 0, &lDISPID);
+
+				DISPPARAMS param;
+
+				VARIANTARG args[4];
+
+				param.rgvarg = &args[0];
+
+				VARIANT result;
+
+				VariantInit(&result);
+
+
+
+				VariantInit(&args[3]);
+				V_VT(&args[3]) = VT_R4;
+				V_R4(&args[3]) = 0;
+
+				VariantInit(&args[2]);
+				V_VT(&args[2]) = VT_R4;
+				V_R4(&args[2]) = 0;
+
+				VariantInit(&args[1]);
+				V_VT(&args[1]) = VT_R4;
+				V_R4(&args[1]) = 0;
+
+				VariantInit(&args[0]);
+				V_VT(&args[0]) = VT_R4;
+				V_R4(&args[0]) = 0;
+
+				param.cArgs = 0;
+
+				param.cNamedArgs = 0;
+
+				param.rgdispidNamedArgs = nullptr;
+
+				lresult = lIDispatch->Invoke(lDISPID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_METHOD, &param, &result, NULL, NULL);
+
+				if (SUCCEEDED(lresult) && result.vt == VT_UI4)
+				{
+					*aPtrZOrder = result.uintVal;
+				}
+
+				SysFreeString(name);
+
+
+			} while (false);
+					   
+			if (FAILED(lresult))
+			{
+				CComPtrCustom<Sinks::EVR::IEVRStreamControl> lEVRStreamControl;
+
+				LOG_INVOKE_QUERY_INTERFACE_METHOD(lUnkActivate, &lEVRStreamControl);
+
+				LOG_CHECK_PTR_MEMORY(lEVRStreamControl);
+
+				LOG_INVOKE_POINTER_METHOD(lEVRStreamControl, getZOrder,
+					aPtrZOrder);
+			}
 
 		} while (false);
 

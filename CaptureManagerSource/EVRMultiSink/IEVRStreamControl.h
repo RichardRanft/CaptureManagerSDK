@@ -8,7 +8,7 @@ namespace EVRMultiSink
 		namespace EVR
 		{
 			MIDL_INTERFACE("57523B2A-D3DF-4BA3-B7A1-91BD1E0E7DE8")
-			IEVRStreamControl : public IUnknown
+			IEVRStreamControl : public IDispatch
 			{
 			public:
 				virtual /* [id][helpstring] */ HRESULT STDMETHODCALLTYPE setPosition(

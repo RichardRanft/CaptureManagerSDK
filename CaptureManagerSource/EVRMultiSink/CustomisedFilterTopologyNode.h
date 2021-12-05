@@ -9,6 +9,9 @@ namespace EVRMultiSink
 {
 	using namespace CaptureManager;
 
+	MIDL_INTERFACE("D4BB697C-E0C9-4ABE-B02F-F24557AF1DA8")
+		ICustomisedFilterTopologyNode{};
+
 	class CustomisedFilterTopologyNode :
 		public BaseUnknown<IUnknown>
 	{

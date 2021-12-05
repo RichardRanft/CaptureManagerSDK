@@ -37,6 +37,24 @@ namespace EVRMultiSink
 					IPresenter** aPtrPresenter,
 					IMFTransform** aPtrPtrMixer);
 
+				static HRESULT createDirect3D11PresenterFromWindowHandler(
+					HANDLE aHandle,
+					DWORD aOutputNodeAmount,
+					IPresenter** aPtrPresenter,
+					IMFTransform** aPtrPtrMixer);
+
+				static HRESULT createDirect3D11PresenterFromSharedHandler(
+					HANDLE aHandle,
+					DWORD aOutputNodeAmount,
+					IPresenter** aPtrPresenter,
+					IMFTransform** aPtrPtrMixer);
+
+				static HRESULT createDirect3D11PresenterFromTexture(
+					IUnknown* aPtrTarget,
+					DWORD aOutputNodeAmount,
+					IPresenter** aPtrPresenter,
+					IMFTransform** aPtrPtrMixer);
+				
 				static HRESULT createDirect3D11Presenter(
 					HANDLE aHandle,
 					IUnknown* aPtrUnkTarget,

@@ -372,6 +372,8 @@ namespace CaptureManager
 
 						lEncoderInfo.mGUID = __uuidof(CWMAEncMediaObject);
 
+						lEncoderInfo.mIsStreaming = FALSE;
+
 						aRefAudioEncoderDic.push_back(lEncoderInfo);
 					}
 
@@ -382,6 +384,8 @@ namespace CaptureManager
 						lEncoderInfo.mName = L"WMSpeech Encoder DMO";
 
 						lEncoderInfo.mGUID = __uuidof(CWMSPEncMediaObject2);
+
+						lEncoderInfo.mIsStreaming = FALSE;
 
 						aRefAudioEncoderDic.push_back(lEncoderInfo);
 					}

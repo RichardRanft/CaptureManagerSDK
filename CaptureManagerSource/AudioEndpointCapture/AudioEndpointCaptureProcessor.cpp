@@ -44,21 +44,22 @@ namespace CaptureManager
 
 			AudioEndpointCaptureProcessor::AudioEndpointCaptureProcessor() :
 				CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
-				mCycleOfCapture(4),
 				mAudioClient(nullptr),
 				mPtrAudioCaptureClient(nullptr),
 				mPtrMMDevice(nullptr),
 				mState(SourceState::SourceStateUninitialized),
 				mFirstInvoke(true),
 				mDeltaTimeDuration(0),
-				mCurrentSampleTime(0),
-				mCheckSampleDuration(0),
 				mReleaseAudioClientLock(false),
 				mSampleDuration(400000),
+				mSilenceDuration(mSampleDuration / 10000),
 				mBufferOffset(0),
 				mPrevSampleTime(0),
 				mSilenceBlock(FALSE),
-				mIsSilenceBlock(FALSE)
+				mIsSilenceBlock(FALSE),
+				mAudioSamplesReadyEvent(NULL),
+				mShutdownEvent(NULL),
+				mInvokeMode(INVOKEMODE::SLEEP)
 			{
 			}
 			
@@ -67,6 +68,8 @@ namespace CaptureManager
 			HRESULT STDMETHODCALLTYPE AudioEndpointCaptureProcessor::invoke()
 			{
 				HRESULT lresult(E_NOTIMPL);
+
+				mReleaseAudioClientLock = true;
 
 				do
 				{
@@ -77,8 +80,6 @@ namespace CaptureManager
 
 						break;
 					}
-
-					mReleaseAudioClientLock = true;
 
 					if (mFirstInvoke)
 					{
@@ -91,76 +92,185 @@ namespace CaptureManager
 						break;
 					}
 
-					auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
-
-					auto ldif = lCurrentTime - mPrevTime;
-
-					if ((ldif + mDeltaTimeDuration) >= mSampleDuration)
+					if(mInvokeMode == INVOKEMODE::EVENT)
 					{
-						mPrevTime = lCurrentTime;
 
-						mDeltaTimeDuration = (ldif + mDeltaTimeDuration) - mSampleDuration;
-						
-						mCurrentSampleTime += mSampleDuration;
+						HANDLE lWaitArray[2] = { mShutdownEvent, mAudioSamplesReadyEvent };
 
-						mIsSilenceBlock = mSilenceBlock;
+						DWORD lWaitResult = WaitForMultipleObjects(2, lWaitArray, FALSE, mSilenceDuration);
+						switch (lWaitResult)
+						{
+						case WAIT_OBJECT_0 + 0:
+						default:
+						{
+							goto SHUTDOWN_LABLE;
+						}
+						break;
+						case WAIT_OBJECT_0 + 1:
+						{
+							UINT32 lNextPacketSize = 0;
 
-						mSilenceBlock = TRUE;
+							lresult = mPtrAudioCaptureClient->GetNextPacketSize(&lNextPacketSize);
 
-						mNewSampleCondition.notify_all();
+							if (FAILED(lresult))
+								lNextPacketSize = 0;
+
+							lresult = S_OK;
+
+							if (lNextPacketSize > 0)
+							{
+								BYTE* lPtrData;
+
+								UINT32 lNumFramesToRead = 0;
+
+								DWORD lFlags(0);
+
+								lresult = mPtrAudioCaptureClient->GetBuffer(
+									&lPtrData,
+									&lNumFramesToRead,
+									&lFlags,
+									NULL,
+									NULL
+								);
+
+								if (FAILED(lresult))
+								{
+									lNumFramesToRead = 0;
+								}
+								else
+								{
+									if (lFlags & AUDCLNT_BUFFERFLAGS_SILENT)
+									{
+										mIsSilenceBlock = TRUE;
+
+										mWrittenBufferSize = 0;
+
+										mNewSampleCondition.notify_all();
+									}
+									else
+									{
+										if (lNumFramesToRead > 0)
+										{
+											auto lwrittenByte = lNumFramesToRead * mBlockAlign;
+
+											writeAudioBuffer(lPtrData,
+												lwrittenByte);
+
+											mWrittenBufferSize += lwrittenByte;
+
+											mIsSilenceBlock = FALSE;
+										}
+									}
+								}
+
+								lresult = mPtrAudioCaptureClient->ReleaseBuffer(lNumFramesToRead);
+
+							}
+							
+							if (mWrittenBufferSize >= mExpectedBufferSize)
+							{
+								mIsSilenceBlock = FALSE;
+
+								mNewSampleCondition.notify_all();
+
+								mPrevTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+
+								mWrittenBufferSize = 0;
+							}
+						}
+						break;
+
+						case WAIT_TIMEOUT:
+						{
+							mIsSilenceBlock = TRUE;
+
+							mWrittenBufferSize = 0;
+
+							mNewSampleCondition.notify_all();
+						}
+						break;
+											   
+						}
+
+					SHUTDOWN_LABLE:
+						lresult = S_OK;
+						break;
 					}
-
-					UINT32 lNextPacketSize = 0;
-
-					lresult = mPtrAudioCaptureClient->GetNextPacketSize(&lNextPacketSize);
-
-					if (FAILED(lresult))
-						lNextPacketSize = 0;
-
-					lresult = S_OK;
-
-					if (lNextPacketSize > 0)
+					else if (mInvokeMode == INVOKEMODE::SLEEP)
 					{
-						BYTE* lPtrData;
+						auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
 
-						UINT32 lNumFramesToRead = 0;
+						auto ldif = lCurrentTime - mPrevTime;
 
-						DWORD lFlags(0);
+						if ((ldif + mDeltaTimeDuration) >= mSampleDuration)
+						{
+							mPrevTime = lCurrentTime;
 
-						lresult = mPtrAudioCaptureClient->GetBuffer(
-							&lPtrData,
-							&lNumFramesToRead,
-							&lFlags,
-							NULL,
-							NULL
-							);
+							mDeltaTimeDuration = (ldif + mDeltaTimeDuration) - mSampleDuration;
+							
+							mIsSilenceBlock = mSilenceBlock;
+
+							mSilenceBlock = TRUE;
+
+							mNewSampleCondition.notify_all();
+						}
+
+						UINT32 lNextPacketSize = 0;
+
+						lresult = mPtrAudioCaptureClient->GetNextPacketSize(&lNextPacketSize);
 
 						if (FAILED(lresult))
+							lNextPacketSize = 0;
+
+						lresult = S_OK;
+
+						if (lNextPacketSize > 0)
 						{
-							lNumFramesToRead = 0;
-						}
-						else
-						{
-							if (lFlags & AUDCLNT_BUFFERFLAGS_SILENT)
+							BYTE* lPtrData;
+
+							UINT32 lNumFramesToRead = 0;
+
+							DWORD lFlags(0);
+
+							lresult = mPtrAudioCaptureClient->GetBuffer(
+								&lPtrData,
+								&lNumFramesToRead,
+								&lFlags,
+								NULL,
+								NULL
+							);
+
+							if (FAILED(lresult))
 							{
-								mSilenceBlock = TRUE;
+								lNumFramesToRead = 0;
 							}
 							else
 							{
-								if (lNumFramesToRead > 0)
+								if (lFlags & AUDCLNT_BUFFERFLAGS_SILENT)
 								{
-									writeAudioBuffer(lPtrData,
-										lNumFramesToRead * mBlockAlign);
+									mSilenceBlock = TRUE;
+								}
+								else
+								{
+									if (lNumFramesToRead > 0)
+									{
+										writeAudioBuffer(lPtrData,
+											lNumFramesToRead * mBlockAlign);
 
-									mSilenceBlock = FALSE;
+										mSilenceBlock = FALSE;
+									}
 								}
 							}
+
+							lresult = mPtrAudioCaptureClient->ReleaseBuffer(lNumFramesToRead);
 						}
 
-						lresult = mPtrAudioCaptureClient->ReleaseBuffer(lNumFramesToRead);
+						Sleep(mMillTickTime);
 					}
-
-					Sleep(mMillTickTime);
+					else
+					{
+						Sleep(10);
+					}
 					
 					lresult = S_OK;
 
@@ -466,9 +576,7 @@ namespace CaptureManager
 
 							LOG_INVOKE_MF_METHOD(SetCurrentLength, lMediaBuffer, mExpectedBufferSize);
 						}
-
-						lSampleTime = mCurrentSampleTime;
-
+						
 						lSampleTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();											
 
 						if (mPrevSampleTime > 0)
@@ -527,13 +635,20 @@ namespace CaptureManager
 					{						
 						mState = SourceState::SourceStateStarted;
 
+						if (mShutdownEvent != NULL) 
+							ResetEvent(mShutdownEvent);
+
 						CaptureInvoker::start();
+
+						LOG_CHECK_PTR_MEMORY(mAudioClient);
+
+						LOG_INVOKE_POINTER_METHOD(mAudioClient, Start);
 
 						lresult = S_OK;
 
 						break;
 					}
-
+					
 					lresult = initializeAudioClient();
 
 					if (FAILED(lresult))
@@ -545,25 +660,21 @@ namespace CaptureManager
 
 					LOG_CHECK_PTR_MEMORY(mAudioClient);
 							
-					mCheckSampleDuration = mCurrentAudioCaptureConfig.mDefaultDevicePeriod >> 1;
-
 					UINT32 lAudioClientBufferSampleSize;
 
 					LOG_INVOKE_POINTER_METHOD(mAudioClient, GetBufferSize, &lAudioClientBufferSampleSize);
-					
+										
 					mBlockAlign = mCurrentAudioCaptureConfig.mPWAVEFORMATEX->nBlockAlign;
 										
 					mExpectedBufferSize = (UINT32)((((LONGLONG)mCurrentAudioCaptureConfig.mPWAVEFORMATEX->nSamplesPerSec) * ((LONGLONG)mBlockAlign)* mSampleDuration) / 10000000LL);
 					
-					mSleepDuration = mCheckSampleDuration;// mCurrentAudioCaptureConfig.mDefaultDevicePeriod / mCycleOfCapture;
-
-					mMillTickTime = (DWORD)(mSleepDuration / 15000LL);
+					mWrittenBufferSize = 0;
+					
+					mMillTickTime = (DWORD)((mCurrentAudioCaptureConfig.mDefaultDevicePeriod >> 1) / 15000LL);
 										
 					LOG_INVOKE_POINTER_METHOD(mAudioClient,GetService,
 						IID_PPV_ARGS(&mPtrAudioCaptureClient));
-
-					mCurrentSampleTime = 0;
-					
+										
 					LOG_INVOKE_FUNCTION(allocateBuffer);
 
 					CaptureInvoker::start();
@@ -606,13 +717,27 @@ namespace CaptureManager
 				{
 					std::lock_guard<std::mutex> lLock(mAccessMutex);
 
-					CaptureInvoker::stop();
+					CaptureInvoker::stop([this]() {if (this->mShutdownEvent != NULL) SetEvent(this->mShutdownEvent); });
 					
+					if (mShutdownEvent)
+					{
+						CloseHandle(mShutdownEvent);
+						mShutdownEvent = NULL;
+					}
+
+					if (mAudioSamplesReadyEvent)
+					{
+						CloseHandle(mAudioSamplesReadyEvent);
+						mAudioSamplesReadyEvent = NULL;
+					}
+
 					LOG_CHECK_STATE_DESCR(isUninitialized(), MF_E_AUDIO_RECORDING_DEVICE_INVALIDATED);
 
 					LOG_INVOKE_FUNCTION(checkShutdown);
 					
 					LOG_CHECK_PTR_MEMORY(mAudioClient);
+
+					LOG_INVOKE_POINTER_METHOD(mAudioClient, Stop);
 
 					if (mState != SourceState::SourceStateStarted &&
 						mState != SourceState::SourceStatePaused)
@@ -645,12 +770,14 @@ namespace CaptureManager
 
 					LOG_CHECK_PTR_MEMORY(mAudioClient);
 
+					LOG_INVOKE_POINTER_METHOD(mAudioClient, Stop);
+
 					if (mState != SourceState::SourceStateStarted)
 					{						
 						break;
 					}
-
-					CaptureInvoker::stop();
+										
+					CaptureInvoker::stop([this]() {if (this->mShutdownEvent != NULL) SetEvent(this->mShutdownEvent); });
 					
 					mState = SourceState::SourceStatePaused;
 					
@@ -993,15 +1120,43 @@ namespace CaptureManager
 						(void**)&mAudioClient);
 					
 					LOG_CHECK_PTR_MEMORY(mAudioClient);
-					
-					LOG_INVOKE_POINTER_METHOD(mAudioClient, Initialize,
-						AUDCLNT_SHAREMODE_SHARED,
-						AUDCLNT_STREAMFLAGS_LOOPBACK,
-						0, 
-						0, 
-						mCurrentAudioCaptureConfig.mPWAVEFORMATEX, 
-						0
+
+					do
+					{
+						LOG_INVOKE_POINTER_METHOD(mAudioClient, Initialize,
+							AUDCLNT_SHAREMODE_SHARED,
+							AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_LOOPBACK,
+							0,
+							0,
+							mCurrentAudioCaptureConfig.mPWAVEFORMATEX,
+							0
 						);
+												
+						mShutdownEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+
+						LOG_CHECK_STATE_DESCR(mShutdownEvent == NULL, E_NOT_VALID_STATE);
+
+						mAudioSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+
+						LOG_INVOKE_POINTER_METHOD(mAudioClient, SetEventHandle, mAudioSamplesReadyEvent);
+
+						mInvokeMode = INVOKEMODE::EVENT;
+
+					} while (false);
+
+					if (FAILED(lresult))
+					{
+						LOG_INVOKE_POINTER_METHOD(mAudioClient, Initialize,
+							AUDCLNT_SHAREMODE_SHARED,
+							AUDCLNT_STREAMFLAGS_LOOPBACK,
+							0,
+							0,
+							mCurrentAudioCaptureConfig.mPWAVEFORMATEX,
+							0
+						);
+
+						mInvokeMode = INVOKEMODE::SLEEP;
+					}
 					
 				} while (false);
 

@@ -5,6 +5,7 @@
 	    xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         Title="WPF Video And Audio Recorder" Height="350" Width="800"
         Loaded="Window_Loaded"
+        x:Name="mWindow"
         >
     <Window.Resources>
         <XmlDataProvider x:Key="XmlSources" XPath="Sources/Source"/>
@@ -12,6 +13,7 @@
         <XmlDataProvider x:Key="XmlEncoderModeProvider" XPath="EncoderMediaTypes/Group"/>
         <XmlDataProvider x:Key="XmlContainerTypeProvider" XPath="SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart"/>
         <XmlDataProvider x:Key="XmlAudioEncoderModeProvider" XPath="EncoderMediaTypes/Group"/>
+        <display:SubTypeNameConverter x:Key="mSubTypeNameConverter"/>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -41,7 +43,8 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Orientation="Vertical">
                             <TextBlock Text="Video Source:" TextAlignment="Center"/>
-                            <ComboBox Margin="5, 2.5" IsEnabled="True" x:Name="m_VideoSourceComboBox">
+                            <ComboBox Margin="5, 2.5" IsEnabled="True" x:Name="m_VideoSourceComboBox"
+                                      SelectedItem="{Binding ElementName=mWindow, Path=CurrentSource}" >
                                 <ComboBox.ItemsSource>
                                     <Binding Source="{StaticResource XmlSources}"
                                      XPath="//*[Source.Attributes/Attribute[@Name='MF_DEVSOURCE_ATTRIBUTE_MEDIA_TYPE']/Value.ValueParts/ValuePart[@Value='MFMediaType_Video']]"/>
@@ -74,10 +77,10 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <ComboBox Margin="5, 2.5" DataContext="{Binding ElementName=m_VideoSourceComboBox, Path=SelectedItem}"  x:Name="m_VideoStreamComboBox">
-                                <ComboBox.ItemsSource>
-                                    <Binding XPath="PresentationDescriptor/StreamDescriptor"/>
-                                </ComboBox.ItemsSource>
+                            <ComboBox Margin="5, 2.5" ItemsSource="{Binding ElementName=mWindow, Path=SubTypes}" 
+                                      x:Name="m_VideoStreamComboBox"                                      
+                                      SelectedItem="{Binding ElementName=mWindow, Path=CurrentSubType}">
+                                
                                 <ComboBox.Style>
                                     <Style>
                                         <Style.Triggers>
@@ -93,23 +96,13 @@
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock x:Name="mtitleTextblock"/>
+                                            <TextBlock Margin="0,0,2,0" Text="Format: "/>
+                                            <TextBlock x:Name="mtitleTextblock" Text="{Binding {}, Converter={StaticResource mSubTypeNameConverter}}"/>
                                         </StackPanel>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding XPath=@MajorType}" Value="MFMediaType_Video">
-                                                <Setter TargetName="mtitleTextblock" Property="Text"  Value="Video stream" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding XPath=@MajorType}" Value="MFMediaType_Audio">
-                                                <Setter TargetName="mtitleTextblock" Property="Text"  Value="Audio stream" />
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <ComboBox Margin="5, 2.5" DataContext="{Binding ElementName=m_VideoStreamComboBox, Path=SelectedItem}" x:Name="m_VideoSourceMediaTypeComboBox">
-                                <ComboBox.ItemsSource>
-                                    <Binding XPath="MediaTypes/MediaType" />
-                                </ComboBox.ItemsSource>
+                            <ComboBox Margin="5, 2.5" ItemsSource="{Binding ElementName=mWindow, Path=MediaTypes}" x:Name="m_VideoSourceMediaTypeComboBox">
 
                                 <ComboBox.Style>
                                     <Style>
@@ -168,7 +161,7 @@
                                                 </Setter>
                                                 <Setter TargetName="mVideoFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -198,7 +191,7 @@
                                                 </Setter>
                                                 <Setter TargetName="mVideoFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -207,6 +200,11 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
 
+                            <TextBlock Visibility="Hidden" x:Name="m_SubTypeTxtBlk" DataContext="{Binding ElementName=m_VideoSourceMediaTypeComboBox, Path=SelectedItem}">
+                                <TextBlock.Text>
+                                    <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                </TextBlock.Text>
+                            </TextBlock>
                         </StackPanel>
                         <Border Grid.Column="1">
                             <Canvas>
@@ -244,6 +242,14 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding ElementName=m_VideoSourceMediaTypeComboBox, Path=SelectedIndex}"
                                              Value="-1">
+                                                <Setter Property="FrameworkElement.IsEnabled"
+                                            Value="False"/>
+                                            </DataTrigger>
+                                            <DataTrigger Value="MFVideoFormat_H264">
+                                                <DataTrigger.Binding>
+                                                    <Binding ElementName="m_SubTypeTxtBlk"
+                                                             Path="Text"/>
+                                                </DataTrigger.Binding>
                                                 <Setter Property="FrameworkElement.IsEnabled"
                                             Value="False"/>
                                             </DataTrigger>
@@ -347,7 +353,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                                 </Setter>
                                                 <Setter TargetName="mVideoFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -377,7 +383,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                                 </Setter>
                                                 <Setter TargetName="mVideoFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -408,6 +414,14 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                              Value="-1">
                                             <Setter Property="FrameworkElement.IsEnabled"
                                             Value="False"/>
+                                        </DataTrigger>
+                                        <DataTrigger Value="MFVideoFormat_H264">
+                                            <DataTrigger.Binding>
+                                                <Binding ElementName="m_SubTypeTxtBlk"
+                                                             Path="Text"/>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="FrameworkElement.IsEnabled"
+                                            Value="True"/>
                                         </DataTrigger>
                                         <Trigger Property="FrameworkElement.IsEnabled" Value="True">
                                             <Setter Property="Border.BorderBrush"
@@ -569,7 +583,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                                 </Setter>
                                                 <Setter TargetName="mAudioFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -599,7 +613,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                                 </Setter>
                                                 <Setter TargetName="mAudioFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -747,7 +761,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" />
                                                 </Setter>
                                                 <Setter TargetName="mAudioFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -777,7 +791,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" />
                                                 </Setter>
                                                 <Setter TargetName="mAudioFormatTextblock" Property="Text">
                                                     <Setter.Value>
-                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" />
+                                                        <Binding XPath="MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value" Converter="{StaticResource mSubTypeNameConverter}" />
                                                     </Setter.Value>
                                                 </Setter>
                                             </MultiDataTrigger>
@@ -840,8 +854,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                 </CheckBox>
                 <Border BorderBrush="Black" x:Name="mCanvas" BorderThickness="0,2,2,2" Padding="10" Grid.Row="1">
                     <Border BorderBrush="Black" BorderThickness="2" IsEnabled="{Binding ElementName=m_VideoStreamPreviewChkBtn, Path=IsChecked}" >
-                        <WindowsFormsHost Width="{Binding ElementName=mCanvas, Path=ActualWidth}"
-                       Height="{Binding ElementName=mCanvas, Path=ActualHeight}">
+                        <WindowsFormsHost Margin="0.4,0.4,-2.4,-2">
                             <wf:Panel x:Name="m_EVRDisplay" BackColor="Blue" Height="100" Width="100"/>
                         </WindowsFormsHost>
                         <!--<display:VideoPanel x:Name="m_EVRDisplay" />-->
@@ -876,6 +889,14 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                     <Setter Property="FrameworkElement.IsEnabled"
                                             Value="False"/>
                                 </MultiDataTrigger>
+                                <DataTrigger Value="MFVideoFormat_H264">
+                                    <DataTrigger.Binding>
+                                        <Binding ElementName="m_SubTypeTxtBlk"
+                                                             Path="Text"/>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="FrameworkElement.IsEnabled"
+                                            Value="True"/>
+                                </DataTrigger>
 
                                 <!--<DataTrigger Binding="{Binding ElementName=m_VideoCompressedMediaTypesComboBox, Path=SelectedIndex}"
                                              Value="-1">

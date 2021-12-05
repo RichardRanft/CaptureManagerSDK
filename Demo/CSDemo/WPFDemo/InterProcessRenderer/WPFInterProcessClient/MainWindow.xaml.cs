@@ -1,28 +1,4 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using CaptureManagerToCSharpProxy;
+﻿using CaptureManagerToCSharpProxy;
 using CaptureManagerToCSharpProxy.Interfaces;
 using InterProcessRenderer.Communication;
 using System;
@@ -53,8 +29,6 @@ namespace WPFInterProcessClient
     {
         CaptureManager mCaptureManager = null;
         
-        IWebCamControl mWebCamControl;
-
         private bool mIsStarted = false;
 
         public MainWindow()
@@ -97,14 +71,7 @@ namespace WPFInterProcessClient
             doc.LoadXml(lxmldoc);
 
             lXmlDataProvider.Document = doc;
-
-            mWebCamParametrsTab.AddHandler(Slider.ValueChangedEvent, new RoutedEventHandler(mParametrSlider_ValueChanged));
-
-            mWebCamParametrsTab.AddHandler(CheckBox.CheckedEvent, new RoutedEventHandler(mParametrSlider_Checked));
-
-            mWebCamParametrsTab.AddHandler(CheckBox.UncheckedEvent, new RoutedEventHandler(mParametrSlider_Checked));
-
-
+                       
 
 
             mEVRStreamFiltersTabItem.AddHandler(Slider.ValueChangedEvent, new RoutedEventHandler(mEVRStreamFilterSlider_ValueChanged));
@@ -263,7 +230,7 @@ namespace WPFInterProcessClient
             {
                 if (_Timer == null)
                 {
-                    _Timer = new System.Timers.Timer(500);
+                    _Timer = new System.Timers.Timer(2000);
                     _Timer.Elapsed += _Timer_Elapsed;
                 }
 
@@ -342,85 +309,7 @@ namespace WPFInterProcessClient
             
             mOffScreenCaptureProcess = null;
         }
-
-
-        private void mParametrSlider_ValueChanged(object sender, RoutedEventArgs e)
-        {
-
-            var lslider = e.OriginalSource as Slider;
-
-            if (lslider == null)
-                return;
-
-            if (!lslider.IsFocused)
-                return;
-
-            var lParametrNode = lslider.Tag as XmlNode;
-
-            if (lParametrNode == null)
-                return;
-
-            var lAttr = lParametrNode.Attributes["Index"];
-
-            if (lAttr == null)
-                return;
-
-            uint lindex = uint.Parse(lAttr.Value);
-
-            int lvalue = (int)lslider.Value;
-
-            mWebCamControl.setCamParametr(
-                lindex,
-                lvalue,
-                2);
-
-        }
-
-        private void mParametrSlider_Checked(object sender, RoutedEventArgs e)
-        {
-
-            var lCheckBox = e.OriginalSource as CheckBox;
-
-            if (lCheckBox == null)
-                return;
-
-            if (!lCheckBox.IsFocused)
-                return;
-
-            var lAttr = lCheckBox.Tag as XmlAttribute;
-
-            if (lAttr == null)
-                return;
-
-            uint lindex = uint.Parse(lAttr.Value);
-
-            int lvalue = (bool)lCheckBox.IsChecked ? 2 : 1;
-
-            int lCurrentValue;
-            int lMin;
-            int lMax;
-            int lStep;
-            int lDefault;
-            int lFlag;
-
-            mWebCamControl.getCamParametr(
-                lindex,
-                out lCurrentValue,
-                out lMin,
-                out lMax,
-                out lStep,
-                out lDefault,
-                out lFlag);
-
-            mWebCamControl.setCamParametr(
-                lindex,
-                lCurrentValue,
-                lvalue);
-
-        }
-
-
-
+                            
 
         private void mEVRStreamFilterSlider_ValueChanged(object sender, RoutedEventArgs e)
         {

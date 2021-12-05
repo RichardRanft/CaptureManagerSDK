@@ -688,15 +688,9 @@ namespace CaptureManager
 
 					UINT32 Discontinuity = FALSE;
 
-					do
-					{
-						LOG_INVOKE_MF_METHOD(GetUINT32,
-							lDownStreamSample,
-							MFSampleExtension_Discontinuity,
-							&Discontinuity);
-
-					} while (false);
-
+					lDownStreamSample->GetUINT32(
+						MFSampleExtension_Discontinuity,
+						&Discontinuity);
 
 					if (mGUIDMajorType == MFMediaType_Video)
 						if (Discontinuity == FALSE && lPrevSampleTimes > 0)
@@ -989,6 +983,11 @@ namespace CaptureManager
 					{
 						lresult = lTransform->ProcessInput(0, aPtrSample, 0);
 
+						if (lresult == 0xc00d36b5)
+						{
+							lresult = S_FALSE;
+						}
+
 						if (lresult == 0xc00d36b2)
 						{
 
@@ -1034,6 +1033,11 @@ namespace CaptureManager
 							1,
 							&loutputDataBuffer,
 							&lprocessOutputStatus);
+
+						if (lresult == E_INVALIDARG)
+						{
+							lresult = MF_E_TRANSFORM_NEED_MORE_INPUT;
+						}
 
 						CComPtrCustom<IMFSample> lInnerSample(loutputDataBuffer.pSample);
 
@@ -1118,7 +1122,7 @@ namespace CaptureManager
 								lTopologyNode,
 								lMediaType);
 
-							lPipeThread.detach();
+							lPipeThread.join();
 
 							MFT_OUTPUT_DATA_BUFFER loutputDataBuffer;
 
@@ -1555,9 +1559,16 @@ namespace CaptureManager
 					}
 
 					aPtrSample->SetSampleFlags(lflag);
-															
-					if (m_processSampleAccess)
-						LOG_INVOKE_MF_METHOD(ProcessSample, lStreamSink, aPtrSample);
+					do
+					{
+
+						if (m_processSampleAccess)
+							LOG_INVOKE_MF_METHOD(ProcessSample, lStreamSink, aPtrSample);
+
+					} while (false);
+
+					if (lresult == 0xc00d36e6)
+						lresult = S_OK;
 					
 				} while (false);
 
@@ -1764,7 +1775,7 @@ namespace CaptureManager
 					m_processSampleAccess = false;
 
 					mSourceStreamPausingCount = mCollectionOfIDs.mListOfSourceIDs.size();
-
+					
 					for (auto lItem : mCollectionOfIDs.mListOfSourceIDs)
 					{
 						CComQIPtrCustom<IMFTopologyNode> lSourceTopologyNode;
@@ -2199,12 +2210,10 @@ namespace CaptureManager
 				{
 					std::unique_lock<std::mutex> lLock(mMediaPipelineMutex);
 
-					mSourceStreamPausingCount = mCollectionOfIDs.mListOfSourceIDs.size();
-
 					auto lconditionResult = mSourceStreamPausingCondition.wait_for(
 						lLock,
 						std::chrono::seconds(5),
-						[this]{return mSourceStreamPausingCount == 0; });
+						[this]{return mSourceStreamPausingCount == 0; });									
 
 					if (lconditionResult == false)
 					{
@@ -2365,7 +2374,7 @@ namespace CaptureManager
 					auto lconditionResult = mSourceStreamStartingCondition.wait_for(
 						lLock,
 						std::chrono::seconds(2),
-						[this]{return mSourceStreamCount == 0; });
+						[this]{return mSourceStreamCount <= 0; });
 										
 					if (lconditionResult == false)
 					{

@@ -288,6 +288,8 @@ namespace EVRMultiSink
 					CComPtrCustom<ID3D11VideoProcessorEnumerator> mVideoProcessorEnum;
 
 					CComPtrCustom<ID3D11VideoProcessor> mVideoProcessor;
+
+					CComPtrCustom<IMFTransform> mVideoSurfaceCopier;
 					
 
 					virtual ~Direct3D11VideoProcessor();

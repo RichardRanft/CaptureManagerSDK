@@ -142,10 +142,17 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FileWebCamKernelStreamingControl.cpp" />
+    <ClCompile Include="KsControlWebCamKernelStreamingControl.cpp" />
     <ClCompile Include="WebCamKernelStreamingControl.cpp" />
+    <ClCompile Include="WebCamKernelStreamingControlManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FileWebCamKernelStreamingControl.h" />
+    <ClInclude Include="IProcessWebCapProperty.h" />
+    <ClInclude Include="KsControlWebCamKernelStreamingControl.h" />
     <ClInclude Include="WebCamKernelStreamingControl.h" />
+    <ClInclude Include="WebCamKernelStreamingControlManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

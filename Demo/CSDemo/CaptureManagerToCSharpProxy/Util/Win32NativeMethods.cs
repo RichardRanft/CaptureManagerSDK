@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 
 namespace CaptureManagerToCSharpProxy
@@ -85,6 +86,35 @@ namespace CaptureManagerToCSharpProxy
           out UInt32 pArgErr
         );
     }
+
+    [ComImport()]
+    [Guid("00000146-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IGlobalInterfaceTable
+    {
+        uint RegisterInterfaceInGlobal(
+            [MarshalAs(UnmanagedType.IUnknown)]
+            object pUnk,
+            [In, MarshalAs(UnmanagedType.LPStruct)]
+            Guid riid);
+
+        void RevokeInterfaceFromGlobal(uint dwCookie);
+
+        [return: MarshalAs(UnmanagedType.IUnknown)]
+        object GetInterfaceFromGlobal(
+            uint dwCookie,
+            [In, MarshalAs(UnmanagedType.LPStruct)]
+            Guid riid);
+    }
+
+
+    [Guid("56a86895-0ad4-11ce-b03a-0020af0ba770")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    [SuppressUnmanagedCodeSecurity]
+    public interface IBaseFilter
+    {
+    }
+
     struct Win32NativeMethods
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
@@ -106,6 +136,36 @@ namespace CaptureManagerToCSharpProxy
             [MarshalAs(UnmanagedType.IUnknown, IidParameterIndex = 1)] out object pUnknown);
 
 
+        [DllImport("ole32.dll", ExactSpelling = true, PreserveSig = false)]
+        public static extern IntPtr CoCreateInstance(
+            [In] ref Guid clsid,
+            IntPtr punkOuter,
+            int context,
+            [In] ref Guid iid);
+
+
+        static public readonly Guid CLSID_StdGlobalInterfaceTable = new Guid("00000323-0000-0000-c000-000000000046");
+        static public Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
+        static public readonly Guid IID_IBaseFilter = new Guid("56a86895-0ad4-11ce-b03a-0020af0ba770");
+        public const int CLSCTX_INPROC_SERVER = 0x1;
+
+        private static Guid s_IID_IUnknown = new Guid(0x00000000, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46);
+
+        [DllImport("ole32.dll")]
+        private static extern int CoMarshalInterThreadInterfaceInStream([In] ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] object pUnk, out IntPtr ppStm);
+
+        [DllImport("ole32.dll")]
+        private static extern int CoGetInterfaceAndReleaseStream(IntPtr pStm, [In] ref Guid riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppv);
+
+        public static int GetStreamForObject(object pUnk, out IntPtr stream)
+        {
+            return CoMarshalInterThreadInterfaceInStream(ref s_IID_IUnknown, pUnk, out stream);
+        }
+
+        public static int GetObjectForStream(IntPtr stream, out object pUnk)
+        {
+            return CoGetInterfaceAndReleaseStream(stream, ref s_IID_IUnknown, out pUnk);
+        }
 
 
         [DllImport(@"oleaut32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
@@ -280,6 +340,13 @@ namespace CaptureManagerToCSharpProxy
                 foreach (var memoryAllocationToFree in memoryAllocationsToFree)
                     Marshal.FreeCoTaskMem(memoryAllocationToFree);
             }
+        }
+
+
+
+        public static IGlobalInterfaceTable GetGlobalInterfaceTable(IntPtr aGIT)
+        {
+            return (IGlobalInterfaceTable)Marshal.GetUniqueObjectForIUnknown(aGIT);
         }
     }
 }

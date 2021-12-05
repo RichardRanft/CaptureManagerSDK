@@ -109,6 +109,13 @@ namespace CaptureManager
 					}
 				};
 
+				enum INVOKEMODE
+				{
+					NONE,
+					SLEEP,
+					EVENT
+				};
+
 				struct BufferContainer
 				{
 					IMFMediaBuffer* mPtrMediaBuffer;
@@ -125,9 +132,7 @@ namespace CaptureManager
 				MFTIME mPrevTime;
 
 				MFTIME mDeltaTimeDuration;
-
-				MFTIME mCurrentSampleTime;
-
+				
 				MFTIME mPrevSampleTime;
 								
 				std::wstring mFriendlyName;
@@ -154,13 +159,11 @@ namespace CaptureManager
 
 				LONGLONG mSampleDuration;
 
-				LONGLONG mCheckSampleDuration;
-
-				INT64 mCycleOfCapture;
-
-				INT64 mSleepDuration;
-							
+				DWORD mSilenceDuration;
+															
 				UINT32 mExpectedBufferSize;
+
+				UINT32 mWrittenBufferSize;
 
 				UINT32 mBlockAlign;
 				
@@ -175,8 +178,12 @@ namespace CaptureManager
 				UINT32 mBufferOffset;
 
 				BOOL mSilenceBlock;
-
 				BOOL mIsSilenceBlock;
+
+				HANDLE mShutdownEvent;
+				HANDLE mAudioSamplesReadyEvent;
+
+				INVOKEMODE mInvokeMode;
 
 
 				HRESULT allocateBuffer();

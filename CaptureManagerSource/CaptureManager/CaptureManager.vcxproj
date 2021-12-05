@@ -107,8 +107,8 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir "$(SolutionDir)Bin" 
-copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
+      <Command>mkdir "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)" 
+copy "$(TargetPath)" "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)\$(TargetName)$(TargetExt)"
 "$(ProjectDir)Tools\Post-Build.bat"</Command>
       <Message>Auto increment build number</Message>
     </PostBuildEvent>
@@ -143,8 +143,8 @@ copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
       <ImportLibrary>$(ProjectDir)$(Configuration)\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir "$(SolutionDir)Bin" 
-copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
+      <Command>mkdir "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)" 
+copy "$(TargetPath)" "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)\$(TargetName)$(TargetExt)"
 "$(ProjectDir)Tools\Post-Build.bat"</Command>
       <Message>Auto increment build number</Message>
     </PostBuildEvent>
@@ -187,7 +187,8 @@ copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(SolutionDir)$(ProjectName)SDK-$(Version_Major).$(Version_Minor).$(Version_Patch)-$(Add_Label)\$(PlatformShortName)" 
-copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
+mkdir "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)" 
+copy "$(TargetPath)" "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)\$(TargetName)$(TargetExt)"
 copy "$(TargetPath)" "$(SolutionDir)$(ProjectName)SDK-$(Version_Major).$(Version_Minor).$(Version_Patch)-$(Add_Label)\$(PlatformShortName)\$(TargetName)$(TargetExt)"
 "$(ProjectDir)Tools\Post-Build.bat"</Command>
       <Message>Auto increment build number</Message>
@@ -227,7 +228,8 @@ copy "$(TargetPath)" "$(SolutionDir)$(ProjectName)SDK-$(Version_Major).$(Version
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(SolutionDir)$(ProjectName)SDK-$(Version_Major).$(Version_Minor).$(Version_Patch)-$(Add_Label)\$(PlatformShortName)" 
-copy "$(TargetPath)" "$(SolutionDir)Bin\$(TargetName)$(TargetExt)"
+mkdir "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)" 
+copy "$(TargetPath)" "$(SolutionDir)Bin\$(PlatformShortName)\$(ConfigurationName)\$(TargetName)$(TargetExt)"
 copy "$(TargetPath)" "$(SolutionDir)$(ProjectName)SDK-$(Version_Major).$(Version_Minor).$(Version_Patch)-$(Add_Label)\$(PlatformShortName)\$(TargetName)$(TargetExt)"
 "$(ProjectDir)Tools\Post-Build.bat"</Command>
       <Message>Auto increment build number</Message>

@@ -30,18 +30,178 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using CaptureManagerToCSharpProxy.Interfaces;
-
+using CaptureManagerToCSharpProxy.WrapClasses;
 
 namespace CaptureManagerToCSharpProxy
 {
     public class CaptureManager
     {
-#if DEBUG
-        CaptureManagerLibrary.ILogPrintOutControl mILogPrintOutControl;
-#endif
 
-        CaptureManagerLibrary.ICaptureManagerControl mICaptureManagerControl;
+        private class CaptureManagerNative
+        {
+            CaptureManagerLibrary.ILogPrintOutControl mILogPrintOutControl;
+            CaptureManagerLibrary.ICaptureManagerControl mICaptureManagerControl;
+
+            public CaptureManagerLibrary.ILogPrintOutControl ILogPrintOutControl
+            {
+                get
+                {
+                    return mILogPrintOutControl;
+                }
+            }
+
+            public CaptureManagerLibrary.ICaptureManagerControl ICaptureManagerControl
+            {
+                get
+                {
+                    return mICaptureManagerControl;
+                }
+            }
+
+            public CaptureManagerNative()
+            {
+                blockedMTAInit(() => {
+                    try
+                    {
+                        mILogPrintOutControl = new CaptureManagerLibrary.CoLogPrintOut() as CaptureManagerLibrary.ILogPrintOutControl;
+
+                        if (mILogPrintOutControl == null)
+                            throw new NullReferenceException("mILogPrintOutControl is null");
+
+
+                        mILogPrintOutControl.addPrintOutDestination(
+                            (int)CaptureManagerLibrary.LogLevel.ERROR_LEVEL,
+                            "Log.txt");
+
+                        mILogPrintOutControl.addPrintOutDestination(
+                            (int)CaptureManagerLibrary.LogLevel.INFO_LEVEL,
+                            "Log.txt");
+
+                        mICaptureManagerControl = new CaptureManagerLibrary.CoCaptureManager();
+
+                        if (mICaptureManagerControl == null)
+                            throw new NullReferenceException("mCaptureManagerNative.ICaptureManagerControl is null");
+                    }
+                    catch (Exception exc)
+                    {
+                        throw exc;
+                    }
+                });
+            }
+
+            public CaptureManagerNative(string aFileName)
+            {
+                blockedMTAInit(()=> {
+                    try
+                    {
+
+                        var lDLLModuleAddr = Win32NativeMethods.LoadLibrary(aFileName);
+
+                        if (lDLLModuleAddr == null)
+                            throw new NullReferenceException("lDLLModuleAddr is null");
+
+                        var lEnterProcAddr = Win32NativeMethods.GetProcAddress(lDLLModuleAddr, "DllGetClassObject");
+
+                        if (lEnterProcAddr == null)
+                            throw new NullReferenceException("lEnterProcAddr is null");
+
+                        var lGetClassObject = Marshal.GetDelegateForFunctionPointer(lEnterProcAddr,
+                            typeof(Win32NativeMethods.DllGetClassObjectDelegate))
+                            as Win32NativeMethods.DllGetClassObjectDelegate;
+
+                        if (lGetClassObject == null)
+                            throw new NullReferenceException("lGetClassObject is null");
+
+                        var CLSID_CoLogPrintOut = new Guid("4563EE3E-DA1E-4911-9F40-88A284E2DD69");
+
+                        var CLSID_CoCaptureManager = new Guid("D5F07FB8-CE60-4017-B215-95C8A0DDF42A");
+
+                        object lUnknown;
+
+                        IClassFactory lFactory;
+
+                        lGetClassObject(
+                            CLSID_CoLogPrintOut,
+                            typeof(IClassFactory).GUID,
+                            out lUnknown);
+
+                        lFactory = lUnknown as IClassFactory;
+
+                        if (lFactory == null)
+                            throw new NullReferenceException("lFactory of CoLogPrintOut is null");
+
+                        lFactory.CreateInstance(
+                            null,
+                            typeof(CaptureManagerLibrary.ILogPrintOutControl).GUID,
+                            out lUnknown);
+
+                        lFactory.LockServer(true);
+
+                        mILogPrintOutControl = lUnknown as CaptureManagerLibrary.ILogPrintOutControl;
+
+                        if (mILogPrintOutControl == null)
+                            throw new NullReferenceException("mILogPrintOutControl is null");
+
+                        lGetClassObject(
+                            CLSID_CoCaptureManager,
+                            typeof(IClassFactory).GUID,
+                            out lUnknown);
+
+                        lFactory = lUnknown as IClassFactory;
+
+                        if (lFactory == null)
+                            throw new NullReferenceException("lFactory of CoCaptureManager is null");
+
+                        lFactory.CreateInstance(
+                            null,
+                            typeof(CaptureManagerLibrary.ICaptureManagerControl).GUID,
+                            out lUnknown);
+
+                        lFactory.LockServer(true);
+
+                        mICaptureManagerControl = lUnknown as CaptureManagerLibrary.ICaptureManagerControl;
+
+                        if (mICaptureManagerControl == null)
+                            throw new NullReferenceException("mCaptureManagerNative.ICaptureManagerControl is null");
+                    }
+                    catch (Exception exc)
+                    {
+                        throw exc;
+                    }
+                });
+            }
+
+            ~CaptureManagerNative()
+            {
+            }
+                        
+            private void blockedMTAInit(Action aInitAction)
+            {
+
+                Thread lInnerMTAThread = new Thread(() =>
+                {
+                    try
+                    {
+                        aInitAction();
+                    }
+                    catch (Exception exc)
+                    {
+                        throw exc;
+                    }
+                });
+
+                lInnerMTAThread.TrySetApartmentState(ApartmentState.MTA);
+
+                lInnerMTAThread.Start();
+
+                lInnerMTAThread.Join();
+            }
+        }
+
+        private static CaptureManagerNative mCaptureManagerNative = null;
 
         private string getFullFilePath(string aFileName)
         {
@@ -50,31 +210,19 @@ namespace CaptureManagerToCSharpProxy
 
         public CaptureManager()
         {
+
             try
             {
                 do
                 {
-                    
-#if DEBUG
-                    mILogPrintOutControl = new CaptureManagerLibrary.CoLogPrintOut() as CaptureManagerLibrary.ILogPrintOutControl;
-
-                    if (mILogPrintOutControl == null)
+                    if (mCaptureManagerNative != null)
                         break;
 
-                    mILogPrintOutControl.addPrintOutDestination(
-                        //(int)CaptureManagerLibrary.LogLevel.INFO_LEVEL,
-                        (int)CaptureManagerLibrary.LogLevel.ERROR_LEVEL,
-                        getFullFilePath("Log.txt"));
+                    mCaptureManagerNative = new CaptureManagerNative();
 
-                    mILogPrintOutControl.addPrintOutDestination(
-                        (int)CaptureManagerLibrary.LogLevel.INFO_LEVEL,
-                        getFullFilePath("Log.txt"));
-#endif
-                    mICaptureManagerControl = new CaptureManagerLibrary.CoCaptureManager();
+                    if (mCaptureManagerNative == null)
+                        throw new NullReferenceException("mCaptureManagerNative is null");
 
-                    if (mICaptureManagerControl == null)
-                        break;
-                    
                 } while (false);
 
             }
@@ -104,84 +252,13 @@ namespace CaptureManagerToCSharpProxy
 
                 do
                 {
-                    var lDLLModuleAddr = Win32NativeMethods.LoadLibrary(lFullFilePath);
-
-                    if (lDLLModuleAddr == null)
+                    if (mCaptureManagerNative != null)
                         break;
 
-                    var lEnterProcAddr = Win32NativeMethods.GetProcAddress(lDLLModuleAddr, "DllGetClassObject");
+                    mCaptureManagerNative = new CaptureManagerNative(lFullFilePath);
 
-                    if (lEnterProcAddr == null)
-                        break;
-
-                    var lGetClassObject = Marshal.GetDelegateForFunctionPointer(lEnterProcAddr,
-                        typeof(Win32NativeMethods.DllGetClassObjectDelegate))
-                        as Win32NativeMethods.DllGetClassObjectDelegate;
-
-                    if (lGetClassObject == null)
-                        break;
-
-                    var CLSID_CoLogPrintOut = new Guid("4563EE3E-DA1E-4911-9F40-88A284E2DD69");
-
-                    var CLSID_CoCaptureManager = new Guid("D5F07FB8-CE60-4017-B215-95C8A0DDF42A");
-
-                    object lUnknown;
-
-                    IClassFactory lFactory;
-
-                    lGetClassObject(
-                        CLSID_CoLogPrintOut,
-                        typeof(IClassFactory).GUID,
-                        out lUnknown);
-
-                    lFactory = lUnknown as IClassFactory;
-
-                    if (lFactory == null)
-                        break;
-
-                    lFactory.CreateInstance(
-                        null,
-                        typeof(CaptureManagerLibrary.ILogPrintOutControl).GUID,
-                        out lUnknown);
-
-                    lFactory.LockServer(true);
-                    
-#if DEBUG
-                    mILogPrintOutControl = lUnknown as CaptureManagerLibrary.ILogPrintOutControl;
-
-                    if (mILogPrintOutControl == null)
-                        break;
-
-                    mILogPrintOutControl.addPrintOutDestination(
-                        (int)CaptureManagerLibrary.LogLevel.INFO_LEVEL,
-                        //(int)CaptureManagerLibrary.LogLevel.ERROR_LEVEL,
-                        getFullFilePath("Log.txt"));
-
-                    mILogPrintOutControl.addPrintOutDestination(
-                        (int)CaptureManagerLibrary.LogLevel.ERROR_LEVEL,
-                        getFullFilePath("Log.txt"));
-#endif
-                    lGetClassObject(
-                        CLSID_CoCaptureManager,
-                        typeof(IClassFactory).GUID,
-                        out lUnknown);
-
-                    lFactory = lUnknown as IClassFactory;
-
-                    if (lFactory == null)
-                        break;
-
-                    lFactory.CreateInstance(
-                        null,
-                        typeof(CaptureManagerLibrary.ICaptureManagerControl).GUID,
-                        out lUnknown);
-
-                    lFactory.LockServer(true);
-
-                    mICaptureManagerControl = lUnknown as CaptureManagerLibrary.ICaptureManagerControl;
-
-                    if (mICaptureManagerControl == null)
-                        break;
+                    if (mCaptureManagerNative == null)
+                        throw new NullReferenceException("mCaptureManagerNative is null");
 
                 } while (false);
             }
@@ -196,70 +273,93 @@ namespace CaptureManagerToCSharpProxy
         
         private bool checkICaptureManagerControl()
         {
-            return mICaptureManagerControl == null;
+            return mCaptureManagerNative == null;
+        }
+        
+        private async Task<string> getCollectionOfSourcesTask(bool aIsAwait)
+        {            
+            return await Task.Run(() =>
+            {
+                string lInfoString = "";
+
+                IntPtr lPtrXMLstring = IntPtr.Zero;
+
+                do
+                {
+                    if (checkICaptureManagerControl())
+                        break;
+
+                    object lUnknown;
+
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
+                        typeof(CaptureManagerLibrary.ISourceControl).GUID,
+                        out lUnknown);
+
+                    if (lUnknown == null)
+                        break;
+
+                    (lUnknown as ISourceControlInner).getCollectionOfSources(out lPtrXMLstring);
+
+                    if (lPtrXMLstring != IntPtr.Zero)
+                        lInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
+
+                } while (false);
+
+                if (lPtrXMLstring != IntPtr.Zero)
+                    Marshal.FreeBSTR(lPtrXMLstring);
+
+                return lInfoString;
+
+            }).ConfigureAwait(aIsAwait);            
+        }
+
+        public async Task<string> getCollectionOfSourcesAsync()
+        {
+            return await getCollectionOfSourcesTask(true);
         }
 
         public bool getCollectionOfSources(ref string aInfoString)
         {
             bool lresult = false;
 
-            IntPtr lPtrXMLstring = IntPtr.Zero;
-            
-            do
+            string lInfoString = "";
+
+            try
             {
-                try
-                {
-                    
-                    if (checkICaptureManagerControl())
-                        break;
+                lInfoString = getCollectionOfSourcesTask(false).Result;
 
-                    object lUnknown;
+                if (string.IsNullOrWhiteSpace(lInfoString))
+                    throw new NullReferenceException("lInfoString is null");
 
-                    mICaptureManagerControl.createControl(
-                        typeof(CaptureManagerLibrary.ISourceControl).GUID,
-                        out lUnknown);
+                aInfoString = lInfoString;
 
-                    if (lUnknown == null)
-                        break;
-                    
-                    (lUnknown as ISourceControlInner).getCollectionOfSources(out lPtrXMLstring);
-                    
-                    if (lPtrXMLstring != IntPtr.Zero)
-                        aInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
+                lresult = true;
 
-                    lresult = true;
-
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-                
-            } while (false);
-
-            if (lPtrXMLstring != IntPtr.Zero)
-                Marshal.FreeBSTR(lPtrXMLstring);
+            }
+            catch (Exception exc)
+            {
+                LogManager.getInstance().write(exc.Message);
+            }
 
             return lresult;
         }
-        
-        public bool getCollectionOfSinks(ref string aInfoString)
+
+        private async Task<string> getCollectionOfSinksTask(bool aIsAwait)
         {
-            bool lresult = false;
-
-            IntPtr lPtrXMLstring = IntPtr.Zero;
-
-            do
+            return await Task.Run(() =>
             {
-                try
-                {
+                string lInfoString = "";
+                
+                IntPtr lPtrXMLstring = IntPtr.Zero;
 
+                do
+                {
                     if (checkICaptureManagerControl())
                         break;
 
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.ISinkControl).GUID,
                         out lUnknown);
 
@@ -267,43 +367,67 @@ namespace CaptureManagerToCSharpProxy
                         break;
 
                     (lUnknown as ISinkControlInner).getCollectionOfSinks(out lPtrXMLstring);
-                    
+
                     if (lPtrXMLstring != IntPtr.Zero)
-                        aInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
+                        lInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
 
-                    lresult = true;
+                } while (false);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                if (lPtrXMLstring != IntPtr.Zero)
+                    Marshal.FreeBSTR(lPtrXMLstring);
 
-            } while (false);
+                return lInfoString;
 
-            if (lPtrXMLstring != IntPtr.Zero)
-                Marshal.FreeBSTR(lPtrXMLstring);
+            }).ConfigureAwait(aIsAwait);
+        }
+
+        public async Task<string> getCollectionOfSinksAsync()
+        {
+            return await getCollectionOfSinksTask(true);
+        }
+
+        public bool getCollectionOfSinks(ref string aInfoString)
+        {
+            bool lresult = false;
+            
+            try
+            {
+                var lInfoString = getCollectionOfSinksTask(false).Result;
+
+                if (string.IsNullOrWhiteSpace(lInfoString))
+                    throw new NullReferenceException("lInfoString is null");
+
+                aInfoString = lInfoString;
+
+                lresult = true;
+
+            }
+            catch (Exception exc)
+            {
+                LogManager.getInstance().write(exc.Message);
+            }
 
             return lresult;
         }
 
-        public bool getCollectionOfEncoders(ref string aInfoString)
+        private async Task<string> getCollectionOfEncodersTask(bool aIsAwait)
         {
-            bool lresult = false;
-
-            IntPtr lPtrXMLstring = IntPtr.Zero;
-
-            do
+            return await Task.Run(() =>
             {
-                try
-                {
 
+                string lInfoString = "";
+
+                IntPtr lPtrXMLstring = IntPtr.Zero;
+
+
+                do
+                {
                     if (checkICaptureManagerControl())
                         break;
 
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.IEncoderControl).GUID,
                         out lUnknown);
 
@@ -311,41 +435,63 @@ namespace CaptureManagerToCSharpProxy
                         break;
 
                     (lUnknown as IEncoderControlInner).getCollectionOfEncoders(out lPtrXMLstring);
-                                        
+
                     if (lPtrXMLstring != IntPtr.Zero)
-                        aInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
+                        lInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
 
-                    lresult = true;
+                } while (false);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                if (lPtrXMLstring != IntPtr.Zero)
+                    Marshal.FreeBSTR(lPtrXMLstring);
 
-            } while (false);
+                return lInfoString;
 
-            if (lPtrXMLstring != IntPtr.Zero)
-                Marshal.FreeBSTR(lPtrXMLstring);
+            }).ConfigureAwait(aIsAwait);
+        }
+
+        public async Task<string> getCollectionOfEncodersAsync()
+        {
+            return await getCollectionOfEncodersTask(true);
+        }
+
+        public bool getCollectionOfEncoders(ref string aInfoString)
+        {
+            bool lresult = false;
+
+
+            try
+            {
+
+                var lInfoString = getCollectionOfEncodersTask(false).Result;
+
+                if (string.IsNullOrWhiteSpace(lInfoString))
+                    throw new NullReferenceException("lInfoString is null");
+
+                aInfoString = lInfoString;
+
+                lresult = true;
+
+            }
+            catch (Exception exc)
+            {
+                LogManager.getInstance().write(exc.Message);
+            }
 
             return lresult;
         }
 
-        public ISinkControl createSinkControl()
+        private async Task<SinkControl> createSinkControlTask(bool aIsAwait)
         {
-            ISinkControl lresult = null;
-
-            do
+            return await Task.Run(() =>
             {
-                try
-                {
+                SinkControl lresult = null;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                do
+                {
 
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.ISinkControl).GUID,
                         out lUnknown);
 
@@ -357,34 +503,37 @@ namespace CaptureManagerToCSharpProxy
                     if (lSinkControl == null)
                         break;
 
-                    lresult = new SinkControl(lSinkControl);  
+                    lresult = new SinkControl(lSinkControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-  
-            } while (false);
+                } while (false);
 
-            return lresult;
+                return lresult;
+
+            }).ConfigureAwait(aIsAwait);
         }
 
-        public ISourceControl createSourceControl()
+        public async Task<ISinkControlAsync> createSinkControlAsync()
         {
-            ISourceControl lresult = null;
+            return await createSinkControlTask(true);
+        }
 
-            do
+        public ISinkControl createSinkControl()
+        {
+            return createSinkControlTask(false).Result;
+        }
+
+        private async Task<SourceControl> createSourceControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                SourceControl lresult = null;
+                
+                do
                 {
-
-                    if (checkICaptureManagerControl())
-                        break;
 
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.ISourceControl).GUID,
                         out lUnknown);
 
@@ -398,32 +547,35 @@ namespace CaptureManagerToCSharpProxy
 
                     lresult = new SourceControl(lSourceControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
+         
+                return lresult;
 
-            } while (false);
-
-            return lresult;
+            }).ConfigureAwait(aIsAwait);
         }
 
-        public ISessionControl createSessionControl()
+        public async Task<ISourceControlAsync> createSourceControlAsync()
         {
-            ISessionControl lresult = null;
+            return await createSourceControlTask(true);
+        }
 
-            do
+        public ISourceControl createSourceControl()
+        {
+            return createSourceControlTask(false).Result;
+        }
+
+        private async Task<SessionControl> createSessionControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
 
-                try
-                {
-                    if (checkICaptureManagerControl())
-                        break;
+                SessionControl lresult = null;
 
+                do
+                {
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.ISessionControl).GUID,
                         out lUnknown);
 
@@ -437,32 +589,33 @@ namespace CaptureManagerToCSharpProxy
 
                     lresult = new SessionControl(lSessionControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
 
-            } while (false);
-
-            return lresult;
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
         }
 
-        public IStreamControl createStreamControl()
+        public async Task<ISessionControlAsync> createSessionControlAsync()
         {
-            IStreamControl lresult = null;
+            return await createSessionControlTask(true);
+        }
 
-            do
+        public ISessionControl createSessionControl()
+        {
+            return createSessionControlTask(false).Result;
+        }
+
+        private async Task<StreamControl> createStreamControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-
-                try
+                StreamControl lresult = null;
+                
+                do
                 {
-                    if (checkICaptureManagerControl())
-                        break;
-
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.IStreamControl).GUID,
                         out lUnknown);
 
@@ -476,32 +629,33 @@ namespace CaptureManagerToCSharpProxy
 
                     lresult = new StreamControl(lSessionControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-
-            } while (false);
-
-            return lresult;
+                } while (false);
+    
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
         }
 
-        public IEncoderControl createEncoderControl()
+        public async Task<IStreamControlAsync> createStreamControlAsync()
         {
-            IEncoderControl lresult = null;
+            return await createStreamControlTask(true);
+        }
 
-            do
+        public IStreamControl createStreamControl()
+        {
+            return createStreamControlTask(false).Result;
+        }
+
+        private async Task<EncoderControl> createEncoderControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-
-                try
+                EncoderControl lresult = null;
+                
+                do
                 {
-                    if (checkICaptureManagerControl())
-                        break;
-
                     object lUnknown;
 
-                    mICaptureManagerControl.createControl(
+                    mCaptureManagerNative.ICaptureManagerControl.createControl(
                         typeof(CaptureManagerLibrary.IEncoderControl).GUID,
                         out lUnknown);
 
@@ -515,67 +669,147 @@ namespace CaptureManagerToCSharpProxy
 
                     lresult = new EncoderControl(lEncoderControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
 
-            } while (false);
-
-            return lresult;
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
         }
-        
+
+        public async Task<IEncoderControlAsync> createEncoderControlAsync()
+        {
+            return await createEncoderControlTask(true);
+        }
+
+        public IEncoderControl createEncoderControl()
+        {
+            return createEncoderControlTask(false).Result;
+        }
+
+        private async Task<string> parseMediaTypeTask(object aMediaType, bool aIsAwait)
+        {
+            return await Task.Run(() =>
+            {
+                string lresult = "";
+                
+                do
+                {
+                    IntPtr lPtrXMLstring = IntPtr.Zero;
+
+                    do
+                    {
+                        try
+                        {
+
+
+                            if (checkICaptureManagerControl())
+                                break;
+
+                            if (aMediaType == null)
+                                break;
+
+                            object lUnknown;
+
+                            mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                                typeof(CaptureManagerLibrary.IMediaTypeParser).GUID,
+                                out lUnknown);
+
+                            if (lUnknown == null)
+                                break;
+
+                            (lUnknown as IMediaTypeParserInner).parse(Marshal.GetIUnknownForObject(aMediaType), out lPtrXMLstring);
+
+                            if (lPtrXMLstring != IntPtr.Zero)
+                                lresult = Marshal.PtrToStringBSTR(lPtrXMLstring);
+
+                        }
+                        catch (Exception exc)
+                        {
+                            LogManager.getInstance().write(exc.Message);
+                        }
+
+                    } while (false);
+
+                    if (lPtrXMLstring != IntPtr.Zero)
+                        Marshal.FreeBSTR(lPtrXMLstring);
+
+                } while (false);
+           
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
+
+        public async Task<string> parseMediaTypeAsync(object aMediaType)
+        {
+            return await parseMediaTypeTask(aMediaType, true);
+        }
+
         public bool parseMediaType(
             object aMediaType,
             out string aInfoString)
         {
             bool lresult = false;
 
-            aInfoString = "";
+            aInfoString = parseMediaTypeTask(aMediaType, false).Result;
 
-            IntPtr lPtrXMLstring = IntPtr.Zero;
-
-            do
-            {
-                try
-                {
-
-
-                    if (checkICaptureManagerControl())
-                        break;
-
-                    if (aMediaType == null)
-                        break;
-
-                    object lUnknown;
-
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IMediaTypeParser).GUID,
-                        out lUnknown);
-
-                    if (lUnknown == null)
-                        break;
-
-                    (lUnknown as IMediaTypeParserInner).parse(Marshal.GetIUnknownForObject(aMediaType), out lPtrXMLstring);
-                                        
-                    if (lPtrXMLstring != IntPtr.Zero)
-                        aInfoString = Marshal.PtrToStringBSTR(lPtrXMLstring);
-
-                    lresult = true;
-
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-
-            } while (false);
-
-            if (lPtrXMLstring != IntPtr.Zero)
-                Marshal.FreeBSTR(lPtrXMLstring);
+            lresult = !string.IsNullOrWhiteSpace(aInfoString);
 
             return lresult;
+        }
+
+        private async Task<int> getStrideForBitmapInfoHeaderTask(
+                    Guid aMFVideoFormat,
+                    uint aWidthInPixels, 
+                    bool aIsAwait)
+        {
+            return await Task.Run(() =>
+            {
+                int lresult = 0;
+                                
+                do
+                {
+                    try
+                    {
+
+
+                        if (checkICaptureManagerControl())
+                            break;
+
+                        object lUnknown;
+
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IStrideForBitmap).GUID,
+                            out lUnknown);
+
+                        if (lUnknown == null)
+                            break;
+
+                        var lStrideForBitmap = lUnknown as CaptureManagerLibrary.IStrideForBitmap;
+
+                        if (lStrideForBitmap == null)
+                            break;
+
+                        lStrideForBitmap.getStrideForBitmap(
+                                        aMFVideoFormat,
+                                        aWidthInPixels,
+                                        out lresult);
+
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
+
+                } while (false);
+           
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
+
+        public async Task<int> getStrideForBitmapInfoHeaderAsync(
+                    Guid aMFVideoFormat,
+                    uint aWidthInPixels)
+        {
+            return await getStrideForBitmapInfoHeaderTask(aMFVideoFormat, aWidthInPixels, true);
         }
 
         public bool getStrideForBitmapInfoHeader(
@@ -585,328 +819,376 @@ namespace CaptureManagerToCSharpProxy
         {
             bool lresult = false;
 
-            aPtrStride = 0;
+            aPtrStride = getStrideForBitmapInfoHeaderTask(aMFVideoFormat, aWidthInPixels, false).Result;
 
-            do
-            {
-                try
-                {
-
-
-                    if (checkICaptureManagerControl())
-                        break;
-
-                    object lUnknown;
-
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IStrideForBitmap).GUID,
-                        out lUnknown);
-
-                    if (lUnknown == null)
-                        break;
-
-                    var lStrideForBitmap = lUnknown as CaptureManagerLibrary.IStrideForBitmap;
-
-                    if (lStrideForBitmap == null)
-                        break;
-
-                    lStrideForBitmap.getStrideForBitmap(
-                                    aMFVideoFormat,
-                                    aWidthInPixels,
-                                    out aPtrStride);
-
-                    lresult = true;
-
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-
-            } while (false);
+            if (aPtrStride != 0)
+                lresult = true;
 
             return lresult;
+        }
+
+        private async Task<VersionControl> getVersionControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
+            {
+                VersionControl lresult = null;
+                
+                do
+                {
+                    try
+                    {
+
+                        if (checkICaptureManagerControl())
+                            break;
+
+                        object lUnknown;
+
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IVersionControl).GUID,
+                            out lUnknown);
+
+                        if (lUnknown == null)
+                            break;
+
+                        var lVersionControl = lUnknown as CaptureManagerLibrary.IVersionControl;
+
+                        if (lVersionControl == null)
+                            break;
+
+                        lresult = new VersionControl(lVersionControl);
+
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
+
+                } while (false);
+           
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
+        
+        public async Task<IVersionControlAsync> getVersionControlAsync()
+        {
+            return await getVersionControlTask(true);
         }
 
         public IVersionControl getVersionControl()
         {
-            IVersionControl lresult = null;
-            do
+            return getVersionControlTask(false).Result;
+        }
+
+        private async Task<EVRStreamControl> createEVRStreamControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                EVRStreamControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IEVRStreamControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IVersionControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lEVRStreamControl = lUnknown as CaptureManagerLibrary.IEVRStreamControl;
 
-                    var lVersionControl = lUnknown as CaptureManagerLibrary.IVersionControl;
+                        if (lEVRStreamControl == null)
+                            break;
 
-                    if (lVersionControl == null)
-                        break;
-                    
-                    lresult = new VersionControl(lVersionControl);
+                        lresult = new EVRStreamControl(lEVRStreamControl);
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-            } while (false);
+                } while (false);
+            
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            return lresult;
+        public async Task<IEVRStreamControlAsync> createEVRStreamControlAsync()
+        {
+            return await createEVRStreamControlTask(true);
         }
 
         public IEVRStreamControl createEVRStreamControl()
         {
-            IEVRStreamControl lresult = null;
-            
-            do
+            return createEVRStreamControlTask(false).Result;
+        }
+
+        private async Task<RenderingControl> createRenderingControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                RenderingControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IRenderingControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IEVRStreamControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lRenderingControl = lUnknown as CaptureManagerLibrary.IRenderingControl;
 
-                    var lEVRStreamControl = lUnknown as CaptureManagerLibrary.IEVRStreamControl;
+                        if (lRenderingControl == null)
+                            break;
 
-                    if (lEVRStreamControl == null)
-                        break;
+                        lresult = new RenderingControl(lRenderingControl);
 
-                    lresult = new EVRStreamControl(lEVRStreamControl);
-                    
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-            } while (false);
+                } while (false);
+       
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            return lresult;
+        public async Task<IRenderingControlAsync> createRenderingControlAsync()
+        {
+            return await createRenderingControlTask(true);
         }
 
         public IRenderingControl createRenderingControl()
         {
-            IRenderingControl lresult = null;
-            
-            do
+            return createRenderingControlTask(false).Result;
+        }
+
+        private async Task<SwitcherControl> createSwitcherControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                SwitcherControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.ISwitcherControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IRenderingControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lSwitcherControl = lUnknown as CaptureManagerLibrary.ISwitcherControl;
 
-                    var lRenderingControl = lUnknown as CaptureManagerLibrary.IRenderingControl;
+                        if (lSwitcherControl == null)
+                            break;
 
-                    if (lRenderingControl == null)
-                        break;
+                        lresult = new SwitcherControl(lSwitcherControl);
 
-                    lresult = new RenderingControl(lRenderingControl);
-                    
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-            } while (false);
+                } while (false);
+          
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            return lresult;
+        public async Task<ISwitcherControlAsync> createSwitcherControlAsync()
+        {
+            return await createSwitcherControlTask(true);
         }
 
         public ISwitcherControl createSwitcherControl()
         {
-            ISwitcherControl lresult = null;
+            return createSwitcherControlTask(false).Result;
+        }
 
-            do
+        private async Task<VideoMixerControl> createVideoMixerControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                VideoMixerControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IVideoMixerControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.ISwitcherControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lVideoMixerControl = lUnknown as CaptureManagerLibrary.IVideoMixerControl;
 
-                    var lSwitcherControl = lUnknown as CaptureManagerLibrary.ISwitcherControl;
+                        if (lVideoMixerControl == null)
+                            break;
 
-                    if (lSwitcherControl == null)
-                        break;
+                        lresult = new VideoMixerControl(lVideoMixerControl);
 
-                    lresult = new SwitcherControl(lSwitcherControl);
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
+          
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            } while (false);
-
-            return lresult;
+        public async Task<IVideoMixerControlAsync> createVideoMixerControlAsync()
+        {
+            return await createVideoMixerControlTask(true);
         }
 
         public IVideoMixerControl createVideoMixerControl()
         {
-            IVideoMixerControl lresult = null;
+            return createVideoMixerControlTask(false).Result;
+        }
 
-            do
+        private async Task<AudioMixerControl> createAudioMixerControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                AudioMixerControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.IAudioMixerControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IVideoMixerControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lAudioMixerControl = lUnknown as CaptureManagerLibrary.IAudioMixerControl;
 
-                    var lVideoMixerControl = lUnknown as CaptureManagerLibrary.IVideoMixerControl;
+                        if (lAudioMixerControl == null)
+                            break;
 
-                    if (lVideoMixerControl == null)
-                        break;
+                        lresult = new AudioMixerControl(lAudioMixerControl);
 
-                    lresult = new VideoMixerControl(lVideoMixerControl);
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
+       
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            } while (false);
-
-            return lresult;
+        public async Task<IAudioMixerControlAsync> createAudioMixerControlAsync()
+        {
+            return await createAudioMixerControlTask(true);
         }
 
         public IAudioMixerControl createAudioMixerControl()
         {
-            IAudioMixerControl lresult = null;
+            return createAudioMixerControlTask(false).Result;
+        }
 
-            do
+        private async Task<SARVolumeControl> createSARVolumeControlTask(bool aIsAwait)
+        {
+            return await Task.Run(() =>
             {
-                try
+                SARVolumeControl lresult = null;
+                
+                do
                 {
+                    try
+                    {
 
+                        if (checkICaptureManagerControl())
+                            break;
 
-                    if (checkICaptureManagerControl())
-                        break;
+                        object lUnknown;
 
-                    object lUnknown;
+                        mCaptureManagerNative.ICaptureManagerControl.createMisc(
+                            typeof(CaptureManagerLibrary.ISARVolumeControl).GUID,
+                            out lUnknown);
 
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.IAudioMixerControl).GUID,
-                        out lUnknown);
+                        if (lUnknown == null)
+                            break;
 
-                    if (lUnknown == null)
-                        break;
+                        var lSARVolumeControl = lUnknown as CaptureManagerLibrary.ISARVolumeControl;
 
-                    var lAudioMixerControl = lUnknown as CaptureManagerLibrary.IAudioMixerControl;
+                        if (lSARVolumeControl == null)
+                            break;
 
-                    if (lAudioMixerControl == null)
-                        break;
+                        lresult = new SARVolumeControl(lSARVolumeControl);
 
-                    lresult = new AudioMixerControl(lAudioMixerControl);
+                    }
+                    catch (Exception exc)
+                    {
+                        LogManager.getInstance().write(exc.Message);
+                    }
 
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
+                } while (false);
+           
+                return lresult;
+            }).ConfigureAwait(aIsAwait);
+        }
 
-            } while (false);
-
-            return lresult;
+        public async Task<ISARVolumeControlAsync> createSARVolumeControlAsync()
+        {
+            return await createSARVolumeControlTask(true);
         }
 
         public ISARVolumeControl createSARVolumeControl()
         {
-            ISARVolumeControl lresult = null;
-
-            do
-            {
-                try
-                {
-
-
-                    if (checkICaptureManagerControl())
-                        break;
-
-                    object lUnknown;
-
-                    mICaptureManagerControl.createMisc(
-                        typeof(CaptureManagerLibrary.ISARVolumeControl).GUID,
-                        out lUnknown);
-
-                    if (lUnknown == null)
-                        break;
-
-                    var lSARVolumeControl = lUnknown as CaptureManagerLibrary.ISARVolumeControl;
-
-                    if (lSARVolumeControl == null)
-                        break;
-
-                    lresult = new SARVolumeControl(lSARVolumeControl);
-
-                }
-                catch (Exception exc)
-                {
-                    LogManager.getInstance().write(exc.Message);
-                }
-
-            } while (false);
-
-            return lresult;
+            return createSARVolumeControlTask(false).Result;
         }
-
-
     }
 }

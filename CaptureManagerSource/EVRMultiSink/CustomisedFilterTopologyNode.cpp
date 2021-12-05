@@ -27,6 +27,7 @@ SOFTWARE.
 #include "../Common/ComPtrCustom.h"
 #include "../LogPrintOut/LogPrintOut.h"
 #include "../Common/Common.h"
+#include <inspectable.h>
 
 namespace EVRMultiSink
 {
@@ -54,14 +55,55 @@ namespace EVRMultiSink
 		HRESULT lresult(E_FAIL);
 
 		bool lState = false;
-
-		do
+			   
+		if (aRefIID == __uuidof(IUnknown))
 		{
-			LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(mTopologyNode, aRefIID, aPtrPtrVoidObject);
 
-			lState = true;
+			do
+			{
+				LOG_CHECK_PTR_MEMORY(aPtrPtrVoidObject);
+				
+				*aPtrPtrVoidObject = (IUnknown *)this;
 
-		} while (false);
+				this->AddRef();
+
+				lState = true;
+
+			} while (false);
+
+		}
+
+
+		if (aRefIID == __uuidof(ICustomisedFilterTopologyNode))
+		{
+
+			do
+			{
+				LOG_CHECK_PTR_MEMORY(aPtrPtrVoidObject);
+
+				*aPtrPtrVoidObject = new CustomisedFilterTopologyNode(mTopologyNode, mActivate);
+
+				this->AddRef();
+
+				lState = true;
+
+			} while (false);
+
+		}
+		
+			   
+		if (!lState && (aRefIID == __uuidof(IMFTopologyNode)))
+		{
+
+			do
+			{
+				LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(mTopologyNode, aRefIID, aPtrPtrVoidObject);
+
+				lState = true;
+
+			} while (false);
+
+		}
 
 		if (!lState && (aRefIID == __uuidof(IBaseFilter)))
 		{
@@ -77,6 +119,21 @@ namespace EVRMultiSink
 			} while (false);
 			
 		}
+
+		//if (!lState && (aRefIID == __uuidof(IInspectable)))
+		//{
+
+		//	do
+		//	{
+		//		LOG_CHECK_STATE(FAILED(createBaseFilter()));
+
+		//		LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(mBaseFilter, aRefIID, aPtrPtrVoidObject);
+
+		//		lState = true;
+
+		//	} while (false);
+
+		//}		
 
 		return lState;
 	}

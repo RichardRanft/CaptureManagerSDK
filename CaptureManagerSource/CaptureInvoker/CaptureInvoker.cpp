@@ -84,7 +84,7 @@ namespace CaptureManager
 			return lresult;
 		}
 
-		HRESULT CaptureInvoker::stop()
+		HRESULT CaptureInvoker::stop(std::function<void(void)> PostStopCallback)
 		{
 
 			HRESULT lresult(E_NOTIMPL);
@@ -99,6 +99,9 @@ namespace CaptureManager
 				}
 
 				mCaptureInvokerState = CaptureInvokerState::Stopped;
+
+				if (PostStopCallback != nullptr)
+					PostStopCallback();
 
 				if (mCaptureThread)
 					mCaptureThread->join();

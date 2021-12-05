@@ -80,7 +80,7 @@ namespace CaptureManager
 				{
 					LOG_CHECK_PTR_MEMORY(aPtrUncompressedMediaType);
 					
-					LOG_CHECK_STATE_DESCR(aEncodingSettings.mEncodingMode == EncodingSettings::VBR, E_NOTIMPL);
+					LOG_CHECK_STATE_DESCR(aEncodingSettings.mEncodingMode != EncodingSettings::CBR, E_NOTIMPL);
 					
 					CComPtrCustom<IMFTransform> lEncoder;
 

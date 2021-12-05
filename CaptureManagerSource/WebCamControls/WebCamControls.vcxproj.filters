@@ -18,12 +18,33 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="WebCamKernelStreamingControlManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileWebCamKernelStreamingControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="WebCamKernelStreamingControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KsControlWebCamKernelStreamingControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="WebCamKernelStreamingControlManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileWebCamKernelStreamingControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="WebCamKernelStreamingControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IProcessWebCapProperty.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KsControlWebCamKernelStreamingControl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

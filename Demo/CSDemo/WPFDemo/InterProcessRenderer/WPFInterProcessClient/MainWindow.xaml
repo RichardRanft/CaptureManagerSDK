@@ -373,71 +373,7 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <TabControl Background="White" Height="150" x:Name="mWebCamParametrsTab" Grid.Row="1" Grid.Column="0">
-                        <TabControl.ItemsSource>
-                            <Binding Source="{StaticResource XmlWebCamParametrsProvider}"
-                             XPath="Parametrs/Group"/>
-                        </TabControl.ItemsSource>
-                        <TabControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock FontSize="18" x:Name="mTitle" Text="{Binding XPath=@Title}"/>
-                            </DataTemplate>
-                        </TabControl.ItemTemplate>
-                        <TabControl.ContentTemplate>
-                            <DataTemplate>
-                                <ItemsControl>
-                                    <ItemsControl.ItemsSource>
-                                        <Binding XPath="./*"/>
-                                    </ItemsControl.ItemsSource>
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel ItemWidth="170" Orientation="Vertical"/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition/>
-                                                </Grid.RowDefinitions>
-                                                <TextBlock Grid.Column="0" Grid.Row="0" FontSize="18" x:Name="mTitle" Text="{Binding XPath=@Title}"/>
-                                                <Grid Grid.Column="0" Grid.Row="1">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Slider IsEnabled="{Binding ElementName=mFlagChBox, Path=IsChecked}" x:Name="mParametrSlider" Minimum="{Binding XPath=@Min}" 
-                                                            Maximum="{Binding XPath=@Max}"
-                                                            Value="{Binding XPath=@CurrentValue}"
-                                                            Tag="{Binding}"
-                                                            ToolTip="{Binding RelativeSource={x:Static RelativeSource.Self}, Path=Value}"
-                                                            SmallChange="{Binding XPath=@Step}"
-                                                            LargeChange="{Binding XPath=@Step}"
-                                                            IsSnapToTickEnabled="True"
-                                                            TickFrequency="{Binding XPath=@Step}"                                                          
-                                                            Grid.Column="0" Grid.Row="0"/>
-
-                                                    <CheckBox x:Name="mFlagChBox" Tag="{Binding XPath=@Index}" Grid.Column="1" Grid.Row="0"/>
-                                                </Grid>
-                                            </Grid>
-                                            <DataTemplate.Triggers>
-                                                <DataTrigger Binding="{Binding XPath=@Flag}" Value="2">
-                                                    <Setter TargetName="mFlagChBox" Property="IsChecked" Value="True"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding XPath=@Flag}" Value="1">
-                                                    <Setter TargetName="mFlagChBox" Property="IsChecked" Value="False"/>
-                                                </DataTrigger>
-                                            </DataTemplate.Triggers>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </DataTemplate>
-                        </TabControl.ContentTemplate>
-                    </TabControl>
                 </Grid>
-
-
             </Canvas>
         </Grid>
     </Grid>

@@ -27,6 +27,17 @@ SOFTWARE.
 
 
 
+void OutputLog(const char *szFormat, ...)
+{
+	char szBuff[1024];
+	va_list arg;
+	va_start(arg, szFormat);
+	_vsnprintf_s(szBuff, sizeof(szBuff), sizeof(szBuff), szFormat, arg);
+	va_end(arg);
+
+	OutputDebugStringA(szBuff);
+}
+
 namespace EVRMultiSink
 {
 	namespace Sinks
@@ -862,6 +873,10 @@ namespace EVRMultiSink
 						aPtrSample,
 						0);
 
+					mPresenter->ProcessFrame(TRUE);
+
+					//OutputLog("lstateResult: %i\n", lstateResult);
+
 					if (lstateResult == S_FALSE)
 					{
 						mTimeStamp = lTimeStamp;
@@ -884,6 +899,7 @@ namespace EVRMultiSink
 						this,
 						nullptr);
 
+					//OutputLog("ProcessSample: %i\n", 0);
 
 				} while (false);
 
@@ -1114,7 +1130,6 @@ namespace EVRMultiSink
 				return E_NOTIMPL;
 			}
 
-
 			HRESULT EVRStreamSink::Invoke(
 				IMFAsyncResult* aPtrAsyncResult)
 			{
@@ -1124,7 +1139,7 @@ namespace EVRMultiSink
 				{
 					lresult = S_OK;
 
-					mPresenter->ProcessFrame(FALSE);
+					//mPresenter->ProcessFrame(TRUE);
 															
 					LOG_INVOKE_MF_METHOD(QueueEvent, this,
 						MEStreamSinkRequestSample,

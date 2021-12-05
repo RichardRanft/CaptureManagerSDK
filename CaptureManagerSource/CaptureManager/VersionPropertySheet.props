@@ -4,8 +4,8 @@
   <PropertyGroup Label="UserMacros">
     <Add_Label>Freeware</Add_Label>
     <Version_Major>1</Version_Major>
-    <Version_Minor>19</Version_Minor>
-    <Version_Patch>1</Version_Patch>
+    <Version_Minor>20</Version_Minor>
+    <Version_Patch>0</Version_Patch>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>

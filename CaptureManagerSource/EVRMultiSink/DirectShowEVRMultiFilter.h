@@ -56,7 +56,7 @@ namespace EVRMultiSink
 				
 				virtual HRESULT OnStartStreaming()override;
 				virtual HRESULT OnStopStreaming()override;
-									
+											
 
 				DECLARE_IUNKNOWN
 				STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, __deref_out VOID **ppv);

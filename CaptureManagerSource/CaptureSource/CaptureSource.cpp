@@ -959,11 +959,15 @@ namespace CaptureManager
 				{
 					if (mState == SourceState::SourceStatePaused)
 					{
-						CComPtrCustom<IUnknown> lToken;
+						do
+						{
+							CComPtrCustom<IUnknown> lToken;
 
-						LOG_INVOKE_POINTER_METHOD(aPtrCommand, getObject, &lToken);
+							LOG_INVOKE_POINTER_METHOD(aPtrCommand, getObject, &lToken);
 
-						LOG_INVOKE_POINTER_METHOD(mStreams[lStreamIdentifier], queueRequestToken, lToken);						
+							LOG_INVOKE_POINTER_METHOD(mStreams[lStreamIdentifier], queueRequestToken, lToken);
+
+						} while (false);
 					}
 
 					lresult = S_OK;

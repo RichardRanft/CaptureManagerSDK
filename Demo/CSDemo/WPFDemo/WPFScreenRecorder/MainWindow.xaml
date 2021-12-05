@@ -326,7 +326,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                                 </ComboBox.Style>
                                 <ComboBox.ItemsSource>
                                     <Binding Source="{StaticResource XmlEncoders}"
-                                     XPath="EncoderFactories/Group[@GUID='{73646976-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'264')]|EncoderFactories/Group[@GUID='{73646976-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'265')]" />
+                                     XPath="EncoderFactories/Group[@GUID='{73646976-0000-0010-8000-00AA00389B71}']/EncoderFactory" />
                                 </ComboBox.ItemsSource>
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -725,7 +725,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" />
                                 </ComboBox.Style>
                                 <ComboBox.ItemsSource>
                                     <Binding Source="{StaticResource XmlEncoders}"
-                                     XPath="EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'WMAudio')]|EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory[contains(@Title,'MP3')]" />
+                                     XPath="EncoderFactories/Group[@GUID='{73647561-0000-0010-8000-00AA00389B71}']/EncoderFactory" />
                                 </ComboBox.ItemsSource>
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
@@ -916,7 +916,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                         <!--<display:EVRDisplay x:Name="m_EVRDisplay" />-->
                         <WindowsFormsHost Width="{Binding ElementName=mCanvas, Path=ActualWidth}"
                        Height="{Binding ElementName=mCanvas, Path=ActualHeight}">
-                            <wf:Panel x:Name="mVideoPanel" BackColor="Blue" Height="100" Width="100"/>
+                            <wf:Panel x:Name="mVideoPanel" Height="100" Width="100"/>
                         </WindowsFormsHost>
                         <Border.Style>
                             <Style TargetType="Border">
@@ -965,7 +965,7 @@ Data="M 0,25 50,25 50,0 100,50 50,100 50,75 0,75 Z" >
                     </ComboBox.Style>
                     <ComboBox.ItemsSource>
                         <Binding Source="{StaticResource XmlContainerTypeProvider}" 
-                                 XPath="SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[contains(@Value,'MP4')]|SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[contains(@Value,'ASF')]"/>
+                                 XPath="SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[contains(@Value,'ASF')]|SinkFactories/SinkFactory[@GUID='{D6E342E3-7DDD-4858-AB91-4253643864C2}']/Value.ValueParts/ValuePart[contains(@Value,'MKV')]"/>
                     </ComboBox.ItemsSource>
                     <ComboBox.ItemTemplate>
                         <DataTemplate>

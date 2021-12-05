@@ -519,15 +519,7 @@ namespace CaptureManager
 						100,		
 						&lFrameInfo,
 						&lDesktopResource);
-										
-#ifdef _DEBUG_CAPTUREMANAGER
-					LogPrintOut::getInstance().printOutln(
-						LogPrintOut::INFO_LEVEL,
-						L" AccumulatedFrames: ",
-						lFrameInfo.AccumulatedFrames);
-#endif
-					
-					// QI for IDXGIResource
+									
 					LOG_INVOKE_QUERY_INTERFACE_METHOD(lDesktopResource, &mAcquiredDesktopImage);
 					lDesktopResource.Release();
 

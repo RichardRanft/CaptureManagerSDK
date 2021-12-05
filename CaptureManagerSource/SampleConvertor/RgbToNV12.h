@@ -30,6 +30,8 @@ namespace CaptureManager
 
 			int image_width;
 			int image_height;
+			int src_stride;
+			int dst_stride;
 
 			UINT32 mOutputSampleSize;
 

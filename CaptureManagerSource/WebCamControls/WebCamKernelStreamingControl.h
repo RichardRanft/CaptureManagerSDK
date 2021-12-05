@@ -1,13 +1,9 @@
 #pragma once
 
-#include <string>
-#include <mutex>
-#include <condition_variable>
-
 #include "../CaptureManagerBroker/IWebCamKernelStreamingControl.h"
+#include "./IProcessWebCapProperty.h"
 #include "../Common/BaseUnknown.h"
 #include "../Common/ComPtrCustom.h"
-
 
 namespace CaptureManager
 {
@@ -18,13 +14,9 @@ namespace CaptureManager
 			namespace CustomisedWebCamControl
 			{
 				class WebCamKernelStreamingControl :
-					public BaseUnknown<IWebCamKernelStreamingControl>
+					public BaseUnknown<IWebCamKernelStreamingControl, IProcessWebCapProperty>
 				{
 				public:
-
-					static HRESULT createIWebCamKernelStreamingControl(
-						std::wstring aSymbolicLink,
-						IWebCamKernelStreamingControl** aPtrPtrIWebCamKernelStreamingControl);
 
 					// IWebCamKernelStreamingControl interface implemnetation
 
@@ -47,13 +39,6 @@ namespace CaptureManager
 						DWORD aParametrIndex,
 						LONG aNewValue,
 						LONG aFlag);
-
-				private:
-					
-					HANDLE mDevice;
-
-
-					WebCamKernelStreamingControl(HANDLE aDevice);
 				};
 			}
 		}

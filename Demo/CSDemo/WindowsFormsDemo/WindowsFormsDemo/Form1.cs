@@ -1,28 +1,4 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using CaptureManagerToCSharpProxy;
+﻿using CaptureManagerToCSharpProxy;
 using CaptureManagerToCSharpProxy.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -41,7 +17,9 @@ namespace WindowsFormsDemo
         CaptureManager mCaptureManager = null;
 
         ISession mISession = null;
-        
+
+        public XmlNode mSelectedSourceXmlNode = null;
+
         class ContainerItem
         {
             public string mFriendlyName = "SourceItem";
@@ -63,13 +41,13 @@ namespace WindowsFormsDemo
             {
                 mCaptureManager = new CaptureManager("CaptureManager.dll");
             }
-            catch (System.Exception)
+            catch (System.Exception exc)
             {
                 try
                 {
                     mCaptureManager = new CaptureManager();
                 }
-                catch (System.Exception)
+                catch (System.Exception exc1)
                 {
 
                 }
@@ -170,47 +148,41 @@ namespace WindowsFormsDemo
             if (lSelectedSourceItem == null)
                 return;
 
-            var lStreamNodes = lSelectedSourceItem.mXmlNode.SelectNodes("PresentationDescriptor/StreamDescriptor");
+            var lSubTypesNode = lSelectedSourceItem.mXmlNode.SelectNodes("PresentationDescriptor/StreamDescriptor/MediaTypes/MediaType/MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue/@Value");
 
-            if (lStreamNodes == null)
+            if (lSubTypesNode == null)
                 return;
+
+            mSelectedSourceXmlNode = lSelectedSourceItem.mXmlNode;
 
             streamComboBox.Items.Clear();
 
-            foreach (var item in lStreamNodes)
+            foreach (XmlNode item in lSubTypesNode)
             {
-                var lNode = (XmlNode)item;
+                var lSubType = item.Value.Replace("MFVideoFormat_", "");
 
-                if(lNode != null)
-                {
-                    var lvalueNode = lNode.SelectSingleNode("@MajorType");
-
-                    ContainerItem lSourceItem = new ContainerItem()
-                    {
-                        mFriendlyName = lvalueNode.Value.Replace("MFMediaType_", ""),
-                        mXmlNode = lNode
-                    };
-
-                    streamComboBox.Items.Add(lSourceItem);
-                }
+                if (!streamComboBox.Items.Contains(lSubType))
+                    streamComboBox.Items.Add(lSubType);
             }
         }
 
         private void streamComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var lSelectedStreamItem = (ContainerItem)streamComboBox.SelectedItem;
+            var lCurrentSubType = (string)streamComboBox.SelectedItem;
+            
+            var lCurrentSourceNode = mSelectedSourceXmlNode as XmlNode;
 
-            if (lSelectedStreamItem == null)
+            if (lCurrentSourceNode == null)
                 return;
 
-            var lMediaTypeNodes = lSelectedStreamItem.mXmlNode.SelectNodes("MediaTypes/MediaType");
+            var lMediaTypesNode = lCurrentSourceNode.SelectNodes("PresentationDescriptor/StreamDescriptor/MediaTypes/MediaType[MediaTypeItem[@Name='MF_MT_SUBTYPE']/SingleValue[@Value='MFVideoFormat_" + lCurrentSubType + "']]");
 
-            if (lMediaTypeNodes == null)
+            if (lMediaTypesNode == null)
                 return;
 
             mediaTypeComboBox.Items.Clear();
 
-            foreach (var item in lMediaTypeNodes)
+            foreach (var item in lMediaTypesNode)
             {
                 var lNode = (XmlNode)item;
 
@@ -277,29 +249,9 @@ namespace WindowsFormsDemo
                 return;
 
             string lSymbolicLink = lNode.Value;
-
-            var lSelectedStreamItem = (ContainerItem)streamComboBox.SelectedItem;
-
-            if (lSelectedStreamItem == null)
-                return;
-
-            lSourceNode = lSelectedStreamItem.mXmlNode;
-
-            if (lSourceNode == null)
-                return;
-
-            lNode = lSourceNode.SelectSingleNode("@Index");
-
-            if (lNode == null)
-                return;
-
+            
             uint lStreamIndex = 0;
-
-            if (!uint.TryParse(lNode.Value, out lStreamIndex))
-            {
-                return;
-            }
-
+            
             var lMediaTypeItem = (ContainerItem)mediaTypeComboBox.SelectedItem;
 
             if (lMediaTypeItem == null)
@@ -357,7 +309,7 @@ namespace WindowsFormsDemo
 
             if (lEVROutputNode == null)
                 return;
-            
+
             object lPtrSourceNode;
 
             var lSourceControl = mCaptureManager.createSourceControl();
@@ -392,8 +344,6 @@ namespace WindowsFormsDemo
             mISession.startSession(0, Guid.Empty);
 
             start_stopBtn.Text = "Stop";
-
-            System.Runtime.InteropServices.Marshal.ReleaseComObject(lEVROutputNode);
         }
 
         private void label1_Click(object sender, EventArgs e)

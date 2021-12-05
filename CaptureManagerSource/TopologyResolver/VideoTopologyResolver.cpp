@@ -376,7 +376,7 @@ namespace CaptureManager
 
 					auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
 					DataParser::readMediaType(
-						aPtrUpStreamMediaType,
+						*aPtrPtrDownStreamMediaType,
 						lRootXMLElement);
 
 					std::wstringstream lwstringstream;
@@ -673,6 +673,57 @@ namespace CaptureManager
 							aPtrUpStreamMediaType);
 
 					} while (false);
+					
+					if (FAILED(lresult))
+					{
+
+						CComPtrCustom<IMFMediaType> lFirstOutputMediaType;
+
+						lresult = findSuitableDecoderMediaType(
+							aPtrUpStreamMediaType,
+							aPtrIMFVideoSampleAllocatorEx,
+							&lFirstOutputMediaType,
+							aPtrMediaTypeHandler);
+
+						if (FAILED(lresult))
+						{
+							do
+							{
+								LOG_INVOKE_FUNCTION(createMediaType,
+									aPtrUpStreamMediaType,
+									//MFVideoFormat_NV12,
+									MFVideoFormat_RGB32,
+									&lMediaType);
+
+							} while (false);
+
+							if (FAILED(lresult) && lFirstOutputMediaType)
+							{
+								LOG_INVOKE_FUNCTION(createMediaType,
+									lFirstOutputMediaType,
+									MFVideoFormat_NV12,
+									//MFVideoFormat_RGB32,
+									&lMediaType);
+							}
+
+
+							LOG_CHECK_PTR_MEMORY(lMediaType);
+
+							lresult = findSuitableColorMediaType(
+								lMediaType,
+								aPtrIMFVideoSampleAllocatorEx,
+								aPtrMediaTypeHandler);
+						}
+						else
+						{
+							lMediaType = lFirstOutputMediaType;
+						}
+
+					}
+					else
+					{
+						lMediaType = aPtrUpStreamMediaType;
+					}
 
 					if (FAILED(lresult))
 					{
@@ -688,10 +739,6 @@ namespace CaptureManager
 							aPtrMediaTypeHandler,
 							lMediaType);
 
-					}
-					else
-					{
-						lMediaType = aPtrUpStreamMediaType;
 					}
 										
 					LOG_CHECK_PTR_MEMORY(lMediaType);
@@ -713,7 +760,7 @@ namespace CaptureManager
 						MF_SA_D3D11_BINDFLAGS,
 						D3D11_BIND_RENDER_TARGET
 						);
-					
+
 					LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
 						aPtrIMFVideoSampleAllocatorEx,
 						1,
@@ -1054,6 +1101,13 @@ namespace CaptureManager
 						aPtrUpStreamMediaType,
 						MF_MT_FRAME_SIZE,
 						&lVarItem);
+
+					if (aMFVideoFormat == MFVideoFormat_NV12)
+					{
+						lVarItem.hVal.HighPart = (lVarItem.hVal.HighPart >> 1) << 1;
+
+						lVarItem.hVal.LowPart = (lVarItem.hVal.LowPart >> 1) << 1;
+					}
 					
 					LOG_INVOKE_MF_METHOD(SetItem,
 						lnewMediaType,
@@ -3150,6 +3204,8 @@ namespace CaptureManager
 								if (SUCCEEDED(lresult))
 								{
 									aPtrIMFVideoSampleAllocator->UninitializeSampleAllocator();
+
+									LOG_INVOKE_QUERY_INTERFACE_METHOD(lOutputMediaType, aPtrPtrFirstOutputMediaType);
 
 									break;
 								}

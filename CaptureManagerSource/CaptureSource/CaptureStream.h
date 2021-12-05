@@ -31,7 +31,7 @@ namespace CaptureManager
 
 				HRESULT getToken(IUnknown** aPtrPtrToken)
 				{
-					HRESULT lresult(E_FAIL);
+					HRESULT lresult(S_OK);
 
 					if (mToken)
 						lresult = mToken->QueryInterface(IID_PPV_ARGS(aPtrPtrToken));

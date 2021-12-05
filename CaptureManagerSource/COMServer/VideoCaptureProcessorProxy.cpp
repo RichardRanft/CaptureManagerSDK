@@ -479,7 +479,7 @@ namespace CaptureManager
 			mDiscontinuity(TRUE),
 			mTickSampleTime(0),
 			mSampleTime(0),
-			mVideoFrameDuration(600000),
+			mVideoFrameDuration(330000),
 			mSleepDuration(5),
 			mDeltaTimeDuration(0),
 			mPrevTime(0),
@@ -900,6 +900,10 @@ namespace CaptureManager
 
 				CComPtrCustom<IMFSample> lSample;
 
+				LOG_INVOKE_MF_FUNCTION(MFCreateSample, &lSample);
+
+				LOG_CHECK_PTR_MEMORY(lSample);
+
 				if (mIsHardware)
 				{
 					{
@@ -908,7 +912,12 @@ namespace CaptureManager
 
 						auto lconditionResult = mNewFrameCondition.wait_for(
 							lLock,
-							std::chrono::seconds(5));
+							std::chrono::seconds(1));
+
+						if (lconditionResult == std::cv_status::timeout)
+						{
+							break;
+						}
 
 						if (mCaptureProcessorState == Stopped)
 							break;
@@ -923,7 +932,6 @@ namespace CaptureManager
 
 
 
-						LOG_INVOKE_MF_FUNCTION(MFCreateSample, &lSample);
 
 						LOG_CHECK_PTR_MEMORY(lSample);
 
@@ -933,8 +941,6 @@ namespace CaptureManager
 				}
 				else
 				{
-					LOG_INVOKE_MF_FUNCTION(MFCreateSample, &lSample);
-
 					CComPtrCustom<IMFMediaBuffer> lMediaBuffer;
 
 					{
@@ -942,7 +948,15 @@ namespace CaptureManager
 
 						auto lconditionResult = mNewFrameCondition.wait_for(
 							lLock,
-							std::chrono::seconds(5));
+							std::chrono::seconds(1));					
+						
+						if (lconditionResult == std::cv_status::timeout)
+						{
+							break;
+						}
+
+						if (mCaptureProcessorState == Stopped)
+							break;
 
 						((SourceRequestResult*)mSourceRequestResult.get())->getMediaBuffer(&lMediaBuffer);
 					}

@@ -19,6 +19,22 @@ namespace EVRMultiSink
 	{
 		namespace EVR
 		{
+			enum class MethodsEnum :DISPID
+			{
+				SetPosition = 1,
+				SetZOrder = SetPosition + 1,
+				GetPosition = SetZOrder + 1,
+				GetZOrder = GetPosition + 1,
+				Flush = GetZOrder + 1,
+				GetCollectionOfFilters = Flush + 1,
+				SetFilterParametr = GetCollectionOfFilters + 1,
+				GetCollectionOfOutputFeatures = SetFilterParametr + 1,
+				SetOutputFeatureParametr = GetCollectionOfOutputFeatures + 1,
+				SetOpacity = SetOutputFeatureParametr + 1,
+				SetSrcPosition = SetOpacity + 1,
+				Count = SetSrcPosition
+			};
+
 			using namespace CaptureManager;
 
 			using namespace CaptureManager::Core;
@@ -29,14 +45,14 @@ namespace EVRMultiSink
 									
 			template <typename MediaSinkFactory>
 			class EVRActivate :
-				public BaseMFAttributes<IMFActivate, IEVRStreamControl>
+				public BaseMFAttributes<IMFActivate, IEVRStreamControl, IDispatch>
 			{
 
 				
 			public:
 			
 				EVRActivate(IMFAttributes* aPtrIMFAttributes) :
-					BaseMFAttributes<IMFActivate, IEVRStreamControl>(aPtrIMFAttributes)
+					BaseMFAttributes<IMFActivate, IEVRStreamControl, IDispatch>(aPtrIMFAttributes)
 				{}
 
 				virtual ~EVRActivate() 
@@ -174,10 +190,503 @@ namespace EVRMultiSink
 					
 					return lresult;
 				}
+							   				 			  
+				// IDispatch
+				virtual HRESULT STDMETHODCALLTYPE GetTypeInfoCount(
+					/* [out] */ __RPC__out UINT *pctinfo) {
+
+					if(pctinfo != nullptr)
+						*pctinfo = 0;
+
+					return S_OK;
+				}
+
+				virtual HRESULT STDMETHODCALLTYPE GetTypeInfo(
+					/* [in] */ UINT iTInfo,
+					/* [in] */ LCID lcid,
+					/* [out] */ __RPC__deref_out_opt ITypeInfo **ppTInfo) {
+					do
+					{
+						if (ppTInfo != nullptr)
+							*ppTInfo = nullptr;
+
+					} while (false);
+
+					return S_OK;
+				}
+
+				virtual HRESULT STDMETHODCALLTYPE GetIDsOfNames(
+					/* [in] */ __RPC__in REFIID riid,
+					/* [size_is][in] */ __RPC__in_ecount_full(cNames) LPOLESTR *rgszNames,
+					/* [range][in] */ __RPC__in_range(0, 16384) UINT cNames,
+					/* [in] */ LCID lcid,
+					/* [size_is][out] */ __RPC__out_ecount_full(cNames) DISPID *rgDispId) {
+
+					HRESULT lresult(DISP_E_UNKNOWNNAME);
+
+					do
+					{
+						LOG_CHECK_STATE(cNames != 1);
+
+						if (_wcsicmp(*rgszNames, OLESTR("setPosition")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetPosition;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("setZOrder")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetZOrder;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("getPosition")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::GetPosition;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("getZOrder")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::GetZOrder;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("flush")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::Flush;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("getCollectionOfFilters")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::GetCollectionOfFilters;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("setFilterParametr")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetFilterParametr;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("getCollectionOfOutputFeatures")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::GetCollectionOfOutputFeatures;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("setOutputFeatureParametr")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetOutputFeatureParametr;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("setOpacity")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetOpacity;
+
+							lresult = S_OK;
+						}
+						else if (_wcsicmp(*rgszNames, OLESTR("setSrcPosition")) == 0)
+						{
+							*rgDispId = (int)MethodsEnum::SetSrcPosition;
+
+							lresult = S_OK;
+						}
+
+						
+
+					} while (false);
+
+					return lresult;
+				}
+
+				virtual /* [local] */ HRESULT STDMETHODCALLTYPE Invoke(
+					/* [annotation][in] */
+					_In_  DISPID dispIdMember,
+					/* [annotation][in] */
+					_In_  REFIID riid,
+					/* [annotation][in] */
+					_In_  LCID lcid,
+					/* [annotation][in] */
+					_In_  WORD wFlags,
+					/* [annotation][out][in] */
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult,
+					/* [annotation][out] */
+					_Out_opt_  EXCEPINFO *pExcepInfo,
+					/* [annotation][out] */
+					_Out_opt_  UINT *puArgErr) {
+
+					HRESULT lresult = E_NOTIMPL;
+
+					do
+					{
+
+						if (lcid != 0 && lcid != 2048)
+						{
+							lresult = DISP_E_UNKNOWNLCID;
+
+							break;
+						}
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						switch (dispIdMember)
+						{
+						case (int)MethodsEnum::SetPosition:
+						{
+							lresult = invokeSetPosition(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::SetZOrder:
+						{
+							lresult = invokeSetZOrder(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::GetPosition:
+						{
+							lresult = invokeGetPosition(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::GetZOrder:
+						{
+							lresult = invokeGetZOrder(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::Flush:
+						{
+							lresult = invokeFlush(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::SetOpacity:
+						{
+							lresult = invokeSetOpacity(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						case (int)MethodsEnum::SetSrcPosition:
+						{
+							lresult = invokeSetSrcPosition(
+								pDispParams,
+								pVarResult);
+						}
+						break;
+						default:
+							break;
+						}
+
+						
+					} while (false);
+
+					return lresult;
+				}
+
+
+
+				HRESULT STDMETHODCALLTYPE invokeSetPosition(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 4, DISP_E_BADPARAMCOUNT);
+
+						
+
+						FLOAT lLeft = 0.0f;
+						FLOAT lRight = 1.0f;
+						FLOAT lTop = 0.0f;
+						FLOAT lBottom = 1.0f;
+
+						VARIANT lFifthArg = pDispParams->rgvarg[0];
+
+						VARIANT lFouthArg = pDispParams->rgvarg[1];
+
+						VARIANT lThirdArg = pDispParams->rgvarg[2];
+
+						VARIANT lSecondArg = pDispParams->rgvarg[3];
+
+						
+
+						if (lSecondArg.vt == VT_R4)
+						{
+							lLeft = lSecondArg.fltVal;
+						}
+
+						if (lThirdArg.vt == VT_R4)
+						{
+							lRight = lThirdArg.fltVal;
+						}
+
+						if (lFouthArg.vt == VT_R4)
+						{
+							lTop = lFouthArg.fltVal;
+						}
+
+						if (lFifthArg.vt == VT_R4)
+						{
+							lBottom = lFifthArg.fltVal;
+						}
+
+						LOG_INVOKE_FUNCTION(setPosition,
+							lLeft,
+							lRight,
+							lTop,
+							lBottom);
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT STDMETHODCALLTYPE invokeSetSrcPosition(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 4, DISP_E_BADPARAMCOUNT);
+
+
+
+						FLOAT lLeft = 0.0f;
+						FLOAT lRight = 1.0f;
+						FLOAT lTop = 0.0f;
+						FLOAT lBottom = 1.0f;
+
+						VARIANT lFifthArg = pDispParams->rgvarg[0];
+
+						VARIANT lFouthArg = pDispParams->rgvarg[1];
+
+						VARIANT lThirdArg = pDispParams->rgvarg[2];
+
+						VARIANT lSecondArg = pDispParams->rgvarg[3];
+
+
+
+						if (lSecondArg.vt == VT_R4)
+						{
+							lLeft = lSecondArg.fltVal;
+						}
+
+						if (lThirdArg.vt == VT_R4)
+						{
+							lRight = lThirdArg.fltVal;
+						}
+
+						if (lFouthArg.vt == VT_R4)
+						{
+							lTop = lFouthArg.fltVal;
+						}
+
+						if (lFifthArg.vt == VT_R4)
+						{
+							lBottom = lFifthArg.fltVal;
+						}
+
+						LOG_INVOKE_FUNCTION(setSrcPosition,
+							lLeft,
+							lRight,
+							lTop,
+							lBottom);
+
+					} while (false);
+
+					return lresult;
+				}
+				
+
+				HRESULT STDMETHODCALLTYPE invokeSetZOrder(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 1, DISP_E_BADPARAMCOUNT);
 
 
 
 
+						DWORD lZOrder = 0;
+
+						VARIANT lSecondArg = pDispParams->rgvarg[0];
+						
+
+
+
+						if (lSecondArg.vt == VT_I4)
+						{
+							lZOrder = lSecondArg.intVal;
+						}
+						else if (lSecondArg.vt == VT_UI4)
+						{
+							lZOrder = lSecondArg.uintVal;
+						}
+
+						LOG_INVOKE_FUNCTION(setZOrder,
+							lZOrder);
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT STDMETHODCALLTYPE invokeSetOpacity(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 1, DISP_E_BADPARAMCOUNT);
+
+
+
+
+						FLOAT lOpacity = 0;
+
+						VARIANT lSecondArg = pDispParams->rgvarg[0];
+
+
+
+
+						if (lSecondArg.vt == VT_R4)
+						{
+							lOpacity = lSecondArg.fltVal;
+						}
+						else
+						{
+							lresult = DISP_E_BADVARTYPE;
+
+							break;
+						}
+
+						LOG_INVOKE_FUNCTION(setOpacity,
+							lOpacity);
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT STDMETHODCALLTYPE invokeGetPosition(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+					HRESULT lresult(E_NOTIMPL);
+
+					do
+					{
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT STDMETHODCALLTYPE invokeGetZOrder(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 0, DISP_E_BADPARAMCOUNT);
+												
+						DWORD lZOrder = 0;
+
+						LOG_INVOKE_FUNCTION(getZOrder,
+							&lZOrder);
+
+						pVarResult->vt = VT_UI4;
+
+						pVarResult->uintVal = lZOrder;
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT STDMETHODCALLTYPE invokeFlush(
+					_In_  DISPPARAMS *pDispParams,
+					/* [annotation][out] */
+					_Out_opt_  VARIANT *pVarResult)
+				{
+					HRESULT lresult(DISP_E_UNKNOWNINTERFACE);
+
+					do
+					{
+
+						LOG_CHECK_STATE_DESCR(pDispParams == nullptr, DISP_E_PARAMNOTFOUND);
+
+						LOG_CHECK_PTR_MEMORY(pVarResult);
+
+						LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 0, DISP_E_BADPARAMCOUNT);
+						
+						LOG_INVOKE_FUNCTION(flush);
+
+					} while (false);
+
+					return lresult;
+				}
 
 
 				// IEVRStreamControl methods

@@ -1,31 +1,10 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using CaptureManagerToCSharpProxy;
+﻿using CaptureManagerToCSharpProxy;
 using CaptureManagerToCSharpProxy.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -100,6 +79,7 @@ namespace WPFStreamer
 
         public MainWindow()
         {
+
             InitializeComponent();
 
             try
@@ -390,24 +370,9 @@ namespace WPFStreamer
                     break;
 
                 string lSymbolicLink = lNode.Value;
-
-                lSourceNode = mStreamsComboBox.SelectedItem as XmlNode;
-
-                if (lSourceNode == null)
-                    break;
-
-                lNode = lSourceNode.SelectSingleNode("@Index");
-
-                if (lNode == null)
-                    break;
-
+                
                 uint lStreamIndex = 0;
-
-                if (!uint.TryParse(lNode.Value, out lStreamIndex))
-                {
-                    break;
-                }
-
+                
                 lSourceNode = mMediaTypesComboBox.SelectedItem as XmlNode;
 
                 if (lSourceNode == null)
@@ -603,27 +568,7 @@ namespace WPFStreamer
 
 
                 lextendSymbolicLink += " --normalize=Landscape";
-
-
-                IStreamControl lstreamControl = mCaptureManager.createStreamControl();
-
-                IMixerNodeFactory lMixerNodeFactory = null;
-
-                lstreamControl.createStreamControlNodeFactory(ref lMixerNodeFactory);
-
-                List<object> lVideoTopologyInputMixerNodes;
-
-                lMixerNodeFactory.createMixerNodes(
-                    lOutputNode,
-                    2,
-                    out lVideoTopologyInputMixerNodes);
-
-                if (lVideoTopologyInputMixerNodes.Count == 0)
-                    break;
-
-                lOutputNode = lVideoTopologyInputMixerNodes[0];
-
-
+                               
                 mSourceControl.createSourceNode(
                     lextendSymbolicLink,
                     lStreamIndex,

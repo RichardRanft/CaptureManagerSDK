@@ -1,28 +1,4 @@
-﻿/*
-MIT License
-
-Copyright(c) 2020 Evgeny Pereguda
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files(the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions :
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-using CaptureManagerToCSharpProxy;
+﻿using CaptureManagerToCSharpProxy;
 using CaptureManagerToCSharpProxy.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -79,10 +55,8 @@ namespace WPFWebCamShot
 
         //DispatcherTimer mTimer = new DispatcherTimer();
 
-        uint lsampleByteSize;
-
-        byte[] mData = null;
-
+        uint m_sampleByteSize;
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -258,10 +232,8 @@ namespace WPFWebCamShot
                 lVideoWidth,
                 out lWidthInBytes);
 
-            lsampleByteSize = (uint)Math.Abs(lWidthInBytes) * lVideoHeight;
-
-            mData = new byte[lsampleByteSize];
-
+            m_sampleByteSize = (uint)Math.Abs(lWidthInBytes) * lVideoHeight;
+            
             var lSinkControl = mCaptureManager.createSinkControl();
 
             string lxmldoc = "";
@@ -298,7 +270,7 @@ namespace WPFWebCamShot
                 mSinkFactory.createOutputNode(
                     MFMediaType_Video,
                     MFVideoFormat_MJPG,
-                    lsampleByteSize,
+                    m_sampleByteSize,
                     out mISampleGrabberCall);
 
                 mIsMJPG = true;
@@ -310,13 +282,13 @@ namespace WPFWebCamShot
                 mSinkFactory.createOutputNode(
                     MFMediaType_Video,
                     MFVideoFormat_RGB32,
-                    lsampleByteSize,
+                    m_sampleByteSize,
                     out mISampleGrabberCall);
             }
 
             if (mISampleGrabberCall != null)
             {
-                byte[] lData = new byte[lsampleByteSize];
+                byte[] lData = new byte[m_sampleByteSize];
                 
                 var lSampleGrabberCallNode = mISampleGrabberCall.getTopologyNode();
 
@@ -543,9 +515,9 @@ namespace WPFWebCamShot
             if (mISampleGrabberCall == null)
                 return;
 
-            byte[] lData = new byte[lsampleByteSize];
+            byte[] lData = new byte[m_sampleByteSize];
 
-            uint lByteSize = (uint)mData.Length;
+            uint lByteSize = (uint)m_sampleByteSize;
 
             try
             {

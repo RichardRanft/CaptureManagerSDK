@@ -554,6 +554,16 @@ namespace EVRMultiSink
 
 					return S_OK;
 				}
+				else if (riid == __uuidof(IBaseFilter)) {
+
+					CheckPointer(ppv, E_POINTER);
+
+					*ppv = (IBaseFilter *)this;
+
+					this->AddRef();
+
+					return S_OK;
+				}				
 				else {
 					return CBaseVideoRenderer::NonDelegatingQueryInterface(riid, ppv);
 				}

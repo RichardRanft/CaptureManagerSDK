@@ -91,7 +91,7 @@ namespace CaptureManager
 
 				LOG_INVOKE_MF_METHOD(Lock, lSampleBuffer, &lPtrOutputBuffer, &lOutputMaxLength, &lOutputCurrentLength);
 
-				//convert(lPtrInputBuffer, lPtrOutputBuffer);
+				convert(lPtrInputBuffer, lPtrOutputBuffer);
 				
 				LOG_INVOKE_MF_METHOD(Unlock, lSampleBuffer);
 							   
@@ -159,6 +159,34 @@ namespace CaptureManager
 					lInputWidthInPixels,
 					lInputHeightInPixels);
 
+				LONG lSrcStride = 0;
+
+				LOG_INVOKE_MF_METHOD(GetUINT32,
+					aPtrInputMediaType,
+					MF_MT_DEFAULT_STRIDE,
+					(UINT32*)&lSrcStride);
+
+				src_stride = (int)std::abs(lSrcStride);
+
+
+				LONG lDstStride = 0;
+
+				LOG_INVOKE_MF_METHOD(GetUINT32,
+					aPtrOutputMediaType,
+					MF_MT_DEFAULT_STRIDE,
+					(UINT32*)&lDstStride);
+
+				dst_stride = (int)std::abs(lDstStride);
+				
+
+				//LOG_INVOKE_FUNCTION(MediaFoundation::MediaFoundationManager::Get,
+				//	aPtrInputMediaType,
+				//	MF_MT_DEFAULT_STRIDE,
+				//	lInputWidthInPixels,
+				//	lInputHeightInPixels);
+
+				
+
 				
 
 				UINT32 lOutputWidthInPixels = 0;
@@ -176,8 +204,8 @@ namespace CaptureManager
 					lInputHeightInPixels != lOutputHeightInPixels);
 
 
-				image_width = lInputWidthInPixels;
-				image_height = lInputHeightInPixels;
+				image_width = (lInputWidthInPixels >> 1) << 1;
+				image_height = (lInputHeightInPixels >> 1) << 1;
 
 
 				LOG_INVOKE_MF_FUNCTION(MFCalculateImageSize,
@@ -339,7 +367,7 @@ namespace CaptureManager
 								unsigned char* J)
 		{
 			//In NV12 format, UV plane starts below Y plane.
-			unsigned char *UV = &J[image_width*image_height];
+			unsigned char *UV = &J[dst_stride*image_height];
 
 			//I0 and I1 points two sequential source rows.
 			const unsigned char *I0;  //I0 -> rgbrgbrgbrgbrgbrgb...
@@ -357,13 +385,13 @@ namespace CaptureManager
 			//In each iteration: process two rows of Y plane, and one row of interleaved UV plane.
 			for (y = 0; y < image_height; y += 2)
 			{
-				I0 = &I[y*image_width * 3];		//Input row width is image_width*3 bytes (each pixel is R,G,B).
-				I1 = &I[(y + 1)*image_width * 3];
+				I0 = &I[y*src_stride];		//Input row width is image_width*3 bytes (each pixel is R,G,B).
+				I1 = &I[(y + 1)*src_stride];
 
-				Y0 = &J[y*image_width];			//Output Y row width is image_width bytes (one Y element per pixel).
-				Y1 = &J[(y + 1)*image_width];
+				Y0 = &J[y*dst_stride];			//Output Y row width is image_width bytes (one Y element per pixel).
+				Y1 = &J[(y + 1)*dst_stride];
 
-				UV0 = &UV[(y / 2)*image_width];	//Output UV row - width is same as Y row width.
+				UV0 = &UV[(y / 2)*dst_stride];	//Output UV row - width is same as Y row width.
 
 				//Process two source rows into: Two Y destination row, and one destination interleaved U,V row.
 				Rgb2NV12TwoRows(I0,
