@@ -230,6 +230,8 @@ HRESULT CaptureManagerLoader::init()
 				if (SUCCEEDED(lhresult))
 					break;
 			}
+
+			return -1;
 		}
 
 		{

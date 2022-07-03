@@ -22,7 +22,7 @@
     <ProjectGuid>{7432D6ED-8C95-455F-B043-48E27E8C62F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CustomisedAudioResampler</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

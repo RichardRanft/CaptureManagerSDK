@@ -78,9 +78,15 @@ namespace EVRMultiSink
 
 					CComPtrCustom<IMFMediaType> mCurrentMediaType;
 
+					CComPtrCustom<IDirect3DDevice9> mDevice9;
+
+					CComPtrCustom<IDirect3DSurface9> mTargetDirect3DSurface9;
+
+					CComPtrCustom<IDirect3DSurface9> mRenderDirect3DSurface9;
+
 					CComPtrCustom<ID3D11Device> mD3D11Device;
 
-					CComPtrCustom<IMFDXGIDeviceManager> mDeviceManager;
+					CComPtrCustom<IMFDXGIDeviceManager> mMFDXGIDeviceManager;
 
 					CComPtrCustom<ID3D11DeviceContext> mImmediateContext;
 
@@ -105,6 +111,8 @@ namespace EVRMultiSink
 
 				
 					HRESULT createManagerAndDevice();
+
+					HRESULT createDirectX9ManagerAndDevice(IDirect3DDeviceManager9** a_DeviceManager);
 
 					void releaseResources();
 

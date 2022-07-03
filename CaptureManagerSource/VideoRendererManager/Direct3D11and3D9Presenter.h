@@ -28,12 +28,7 @@ namespace CaptureManager
 				class Direct3D11and3D9Presenter :
 					public CBasePresenter
 				{
-
-					CComPtrCustom<IDirect3D9Ex> mD3D9;
-					CComPtrCustom<IDirect3DDevice9Ex> mDevice9;
-					CComPtrCustom<IDirect3DTexture9> mTexture9;
-					CComPtrCustom<IDirect3DVertexBuffer9> g_list_vb;
-										
+													
 
 				public:
 					Direct3D11and3D9Presenter();
@@ -104,6 +99,8 @@ namespace CaptureManager
 
 					CComPtrCustom<ID3D11Device> mD3D11Device;
 
+					CComPtrCustom<IDirect3DDevice9> mDevice9;
+
 					CComPtrCustom<IMFDXGIDeviceManager> mDeviceManager;
 
 					CComPtrCustom<ID3D11DeviceContext> mImmediateContext;
@@ -115,6 +112,10 @@ namespace CaptureManager
 					CComPtrCustom<IDXGISwapChain1> mSwapChain1;
 
 					CComQIPtrCustom<ID3D11Texture2D> mID3D11Texture2D;
+
+					CComPtrCustom<IDirect3DSurface9> mTargetDirect3DSurface9;
+
+					CComPtrCustom<IDirect3DSurface9> mRenderDirect3DSurface9;
 
 					CComQIPtrCustom<ID3D11Texture2D> mSharedID3D11Texture2D;
 										

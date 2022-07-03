@@ -30,6 +30,7 @@ SOFTWARE.
 #include "../Common/Common.h"
 #include "../Common/ComPtrCustom.h"
 #include "../Common/Singleton.h"
+#include "../Common/GUIDs.h"
 #include "../VideoSurfaceCopierManager/VideoSurfaceCopierManager.h"
 #include "../MemoryManager/MemoryManager.h"
 
@@ -128,7 +129,7 @@ namespace EVRMultiSink
 						CComPtrCustom<IMFVideoSampleAllocator> lVideoSampleAllocator;
 
 						LOG_INVOKE_POINTER_METHOD(lGetService, GetService,
-							MR_VIDEO_ACCELERATION_SERVICE,
+							CM_VIDEO_ACCELERATION_SERVICE,
 							IID_PPV_ARGS(&lVideoSampleAllocator));
 
 						LOG_CHECK_PTR_MEMORY(lVideoSampleAllocator);
@@ -142,7 +143,7 @@ namespace EVRMultiSink
 						CComPtrCustom<IMFVideoSampleAllocatorEx> lVideoSampleAllocatorEx;
 
 						LOG_INVOKE_POINTER_METHOD(lGetService, GetService,
-							MR_VIDEO_ACCELERATION_SERVICE,
+							CM_VIDEO_ACCELERATION_SERVICE,
 							IID_PPV_ARGS(&lVideoSampleAllocatorEx));
 
 						LOG_CHECK_PTR_MEMORY(lVideoSampleAllocatorEx);

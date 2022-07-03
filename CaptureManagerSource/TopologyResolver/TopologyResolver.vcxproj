@@ -22,7 +22,7 @@
     <ProjectGuid>{8BDB0048-2789-4A86-8E20-AB0AA9EDB6DA}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TopologyResolver</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

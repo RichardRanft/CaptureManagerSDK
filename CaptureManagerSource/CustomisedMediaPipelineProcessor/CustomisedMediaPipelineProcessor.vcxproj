@@ -22,7 +22,7 @@
     <ProjectGuid>{A1651DFB-A967-4A92-B1FE-C23C416093F1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CustomisedMediaPipelineProcessor</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

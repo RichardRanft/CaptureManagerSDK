@@ -22,7 +22,7 @@
     <ProjectGuid>{93ED7DE4-7B1B-4019-8DA9-398AE112F68B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SampleGrabberCall</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

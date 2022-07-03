@@ -29,6 +29,7 @@ SOFTWARE.
 #include "../LogPrintOut/LogPrintOut.h"
 #include "../Common/Common.h"
 #include "../Common/Singleton.h"
+#include "../Common/GUIDs.h"
 #include "EVRActivate.h"
 #include "VideoRenderingClassFactory.h"
 #include "PresenterFactory.h"
@@ -139,24 +140,11 @@ namespace EVRMultiSink
 
 				LOG_CHECK_PTR_MEMORY(lGetService);
 				
-				CComPtrCustom<IUnknown> lDeviceManager;
+				CComPtrCustom<IMFDXGIDeviceManager> lDeviceManager;
 
-				do
-				{
-					LOG_INVOKE_POINTER_METHOD(lGetService, GetService,
-						MR_VIDEO_ACCELERATION_SERVICE,
-						__uuidof(IDirect3DDeviceManager9),
-						(void**)&lDeviceManager);
-
-				} while (false);
-
-				if (FAILED(lresult))
-				{
-					LOG_INVOKE_POINTER_METHOD(lGetService, GetService,
-						MR_VIDEO_ACCELERATION_SERVICE,
-						__uuidof(IMFDXGIDeviceManager),
-						(void**)&lDeviceManager);
-				}
+				LOG_INVOKE_POINTER_METHOD(lGetService, GetService,
+					CM_VIDEO_ACCELERATION_SERVICE,	
+					IID_PPV_ARGS (& lDeviceManager));
 
 				LOG_CHECK_PTR_MEMORY(lDeviceManager);
 

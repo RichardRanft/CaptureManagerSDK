@@ -36,6 +36,8 @@ namespace CaptureManager
 
 				// CaptureInvoker implementation
 
+				virtual HRESULT STDMETHODCALLTYPE starting() override;
+
 				virtual HRESULT STDMETHODCALLTYPE invoke() override;
 
 
@@ -127,8 +129,6 @@ namespace CaptureManager
 
 				IAudioCaptureClient* mPtrAudioCaptureClient;
 
-				bool mFirstInvoke;
-
 				MFTIME mPrevTime;
 
 				MFTIME mDeltaTimeDuration;
@@ -182,6 +182,7 @@ namespace CaptureManager
 
 				HANDLE mShutdownEvent;
 				HANDLE mAudioSamplesReadyEvent;
+				HANDLE mWaitArray[2];
 
 				INVOKEMODE mInvokeMode;
 

@@ -70,16 +70,15 @@ namespace CaptureManager
 					{
 						do
 						{
-							//if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
-							//{
-							//	LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
-							//		aHandle,
-							//		aOutputNodeAmount,
-							//		aPtrPresenter,
-							//		aPtrPtrMixer);
-							//}
-							//else
-
+							if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
+							{
+								LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
+									aHandle,
+									aOutputNodeAmount,
+									aPtrPresenter,
+									aPtrPtrMixer);
+							}
+							else
 							{
 								LOG_INVOKE_FUNCTION(createDirect3D9PresenterFromWindowHandler,
 									aHandle,
@@ -92,20 +91,18 @@ namespace CaptureManager
 
 						if (FAILED(lresult))
 						{
+							if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
+							{
+								LOG_INVOKE_FUNCTION(createDirect3D11Presenter,
+									aHandle,
+									nullptr,
+									aOutputNodeAmount,
+									aPtrPresenter,
+									aPtrPtrMixer);
 
-							//if (Singleton<ConfigManager>::getInstance().isWindows8Point1_Or_Greater())
-							//{
-							//	LOG_INVOKE_FUNCTION(createDirect3D11Presenter,
-							//		aHandle,
-							//		nullptr,
-							//		aOutputNodeAmount,
-							//		aPtrPresenter,
-							//		aPtrPtrMixer);
-
-							//	lresult = S_FALSE;
-							//}
-							//else
-
+								lresult = S_FALSE;
+							}
+							else
 							{
 								LOG_INVOKE_FUNCTION(createFromSharedHandler,
 									aHandle,
@@ -174,15 +171,27 @@ namespace CaptureManager
 						if (lDirect3DSurface9)
 						{
 
+							CComPtrCustom<Direct3D11and3D9Presenter> lDirect3D9Presenter(new (std::nothrow) Direct3D11and3D9Presenter);
 
-							CComPtrCustom<Direct3D9Presenter> lDirect3D9Presenter(new (std::nothrow) Direct3D9Presenter);
+							//CComPtrCustom<Direct3D11Presenter> lPresenter(new (std::nothrow) Direct3D11Presenter);
 
 							LOG_CHECK_PTR_MEMORY(lDirect3D9Presenter);
 
 							CComPtrCustom<IMFTransform> lMixer;
 
-							LOG_INVOKE_FUNCTION(EVR::Mixer::DXVAVideoProcessor::createDXVAVideoProcessor,
-								&lMixer);
+							LOG_INVOKE_FUNCTION(EVR::Mixer::Direct3D11VideoProcessor::createProcessor,
+								&lMixer,
+								aOutputNodeAmount);
+
+
+							//CComPtrCustom<Direct3D9Presenter> lDirect3D9Presenter(new (std::nothrow) Direct3D9Presenter);
+
+							//LOG_CHECK_PTR_MEMORY(lDirect3D9Presenter);
+
+							//CComPtrCustom<IMFTransform> lMixer;
+
+							//LOG_INVOKE_FUNCTION(EVR::Mixer::DXVAVideoProcessor::createDXVAVideoProcessor,
+							//	&lMixer);
 
 							LOG_INVOKE_POINTER_METHOD(lDirect3D9Presenter, initialize,
 								1920,
@@ -292,9 +301,7 @@ namespace CaptureManager
 
 					CComPtrCustom<IMFTransform> lMixer;
 
-					CComPtrCustom<Direct3D11and3D9Presenter> lPresenter(new (std::nothrow) Direct3D11and3D9Presenter);
-
-					//CComPtrCustom<Direct3D11Presenter> lPresenter(new (std::nothrow) Direct3D11Presenter);
+					CComPtrCustom<Direct3D11Presenter> lPresenter(new (std::nothrow) Direct3D11Presenter);
 
 					LOG_CHECK_PTR_MEMORY(lPresenter);
 

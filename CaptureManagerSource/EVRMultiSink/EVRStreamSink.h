@@ -644,7 +644,6 @@ namespace EVRMultiSink
 				const DWORD mMixerStreamID;
 				DWORD mWorkQueueId;
 				bool mIsShutdown;
-				CComPtrCustom<IMFMediaType> mCurrentMediaType;
 
 				CComPtrCustom<IMFMediaSink> mMediaSink;
 				CComPtrCustom<IMFMediaEventQueue> mEventQueue;  
@@ -688,6 +687,11 @@ namespace EVRMultiSink
 				void update();
 
 				HRESULT checkTimeStamp(MFTIME aTimeStamp, MFTIME aSampleDuration);
+
+				HRESULT createMediaType(
+					IMFMediaType* aPtrUpStreamMediaType,
+					GUID aMFVideoFormat,
+					IMFMediaType** aPtrPtrMediaSinkMediaType);
 			};
 		}
 	}

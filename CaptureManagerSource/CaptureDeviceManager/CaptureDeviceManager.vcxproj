@@ -22,7 +22,7 @@
     <ProjectGuid>{111C776E-0F6A-4D6A-BF5A-F43F7E85D4A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CaptureDeviceManager</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

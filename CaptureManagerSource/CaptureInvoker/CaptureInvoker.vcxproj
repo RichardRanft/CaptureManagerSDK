@@ -22,7 +22,7 @@
     <ProjectGuid>{DCC7314D-5315-4F22-B0CB-FB301688D388}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CaptureInvoker</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

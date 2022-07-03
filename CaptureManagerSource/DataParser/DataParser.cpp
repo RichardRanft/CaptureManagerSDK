@@ -67,9 +67,6 @@ namespace CaptureManager
 
 	EXTERN_GUID(CLSID_WebcamInterfaceDeviceCategory,
 		0xE5323777, 0xF976, 0x4F5B, 0x9B, 0x55, 0xB9, 0x46, 0x99, 0xC4, 0x6E, 0x44);
-
-	EXTERN_GUID(MF_DEVICESTREAM_ATTRIBUTE_FRAMESOURCE_TYPES,
-		0x17145FD1, 0x1B2B, 0x423C, 0x80, 0x01, 0x2B, 0x68, 0x33, 0xED, 0x35, 0x88);
 		
 	///{5E574E59-E28D-41DB-9314-089BFED6957C}
 	EXTERN_GUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_AUDCAP_HW_SOURCE, 
@@ -79,20 +76,44 @@ namespace CaptureManager
 	EXTERN_GUID(VIDEOINFOHEADER2,
 		0xF72A76A0, 0xEB0A, 0x11D0, 0xAC, 0xE4, 0x00, 0x00, 0xC0, 0xCC, 0x16, 0xBA);
 
+	///{5a54a0c9-c7ec-4bd9-8ede-f3c75dc4393b}
+	EXTERN_GUID(VideoProcProgressiveDevice,
+		0x5a54a0c9, 0xc7ec, 0x4bd9, 0x8e, 0xde, 0xf3, 0xc7, 0x5d, 0xc4, 0x39, 0x3b);
+
+	///{335aa36e-7884-43a4-9c91-7f87faf3e37e}
+	EXTERN_GUID(VideoProcBobDevice,
+		0x335aa36e, 0x7884, 0x43a4, 0x9c, 0x91, 0x7f, 0x87, 0xfa, 0xf3, 0xe3, 0x7e);
+
+	///{4553d47f-ee7e-4e3f-9475-dbf1376c4810}
+	EXTERN_GUID(VideoProcSoftwareDevice,
+		0x4553d47f, 0xee7e, 0x4e3f, 0x94, 0x75, 0xdb, 0xf1, 0x37, 0x6c, 0x48, 0x10);
+
+	///{552C0DAD-CCBC-420B-83C8-74943CF9F1A6}
+	EXTERN_GUID(MotionAdaptiveDevice_AMD,
+		0x552C0DAD, 0xCCBC, 0x420B, 0x83, 0xC8, 0x74, 0x94, 0x3C, 0xF9, 0xF1, 0xA6);
 
 
 
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_Y16, FCC('Y16 '));
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_NV21, FCC('NV21'));
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_D16, D3DFMT_D16);
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L16, D3DFMT_L16);
-	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L8, D3DFMT_L8);
+
+
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_Y16, FCC('Y16 '));	
+	//DEFINE_MEDIATYPE_GUID( MFVideoFormat_NV21,      FCC('NV21') );
 
 
 	namespace
 	{
 		EXTERN_GUID(MF_VIDEO_CAPTURE,
 			0xFB6C4281, 0x0353, 0x11d1, 0x90, 0x5F, 0x00, 0x00, 0xC0, 0xCC, 0x16, 0xBA);
+
+		static int DwordToFourCC(DWORD fcc, char* buffer)
+		{
+			//I'm not sure about the order of these, but try messing with them
+			buffer[3] = HIBYTE(HIWORD(fcc));
+			buffer[2] = LOBYTE(HIWORD(fcc));
+			buffer[1] = HIBYTE(LOWORD(fcc));
+			buffer[0] = LOBYTE(LOWORD(fcc));
+			return 0;
+		}
 		
 		using namespace Core;
 
@@ -318,12 +339,12 @@ namespace CaptureManager
 		IF_EQUAL_RETURN(guid, MEDIASUBTYPE_PHOTOMOTION);
 		//IF_EQUAL_RETURN(guid, MFVideoFormat_Intel®_Hardware_MediaType_One);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_Y16);
-		IF_EQUAL_RETURN(guid, MFVideoFormat_NV21);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_D16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_L16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_L8);
 		IF_EQUAL_RETURN(guid, MEDIASUBTYPE_V410);
 		IF_EQUAL_RETURN(guid, MEDIASUBTYPE_V216);
+		//IF_EQUAL_RETURN(guid, MFVideoFormat_NV21);
 
 		
 
@@ -360,6 +381,13 @@ namespace CaptureManager
 
 		// DirectShow Format type
 		IF_EQUAL_RETURN(guid, VIDEOINFOHEADER2);		
+
+
+		// Processor devices
+		IF_EQUAL_RETURN(guid, VideoProcProgressiveDevice);
+		IF_EQUAL_RETURN(guid, VideoProcBobDevice);
+		IF_EQUAL_RETURN(guid, VideoProcSoftwareDevice);
+		IF_EQUAL_RETURN(guid, MotionAdaptiveDevice_AMD);
 
 		return nullptr;
 	}
@@ -2322,9 +2350,11 @@ namespace CaptureManager
 			}
 			else if (aGUID == MF_MT_ORIGINAL_4CC)
 			{
-				readAttribute(
-					aVar,
-					aRefAttributeNode.append_child(L"SingleValue"));
+				char lbuffer[16] = {0};
+
+				DwordToFourCC(aVar.uintVal, lbuffer);
+
+				aRefAttributeNode.append_child(L"SingleValue").append_attribute(L"Value") = lbuffer;
 
 				if(FAILED(lresult))
 				{

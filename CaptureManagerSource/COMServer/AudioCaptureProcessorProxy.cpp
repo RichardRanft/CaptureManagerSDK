@@ -45,10 +45,9 @@ namespace CaptureManager
 		using namespace Sources;		
 
 		AudioCaptureProcessorProxy::AudioCaptureProcessorProxy() :
-			CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
+			CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Audio"),
 			mCycleOfCapture(4),
 			mState(SourceState::SourceStateUninitialized),
-			mFirstInvoke(true),
 			mStreamIndex(0),
 			mDeltaTimeDuration(0),
 			mCurrentSampleTime(0),
@@ -72,8 +71,6 @@ namespace CaptureManager
 			do
 			{
 				LOG_CHECK_PTR_MEMORY(aPtrData);
-
-				std::lock_guard<std::mutex> lLock(mAccessMutex);
 
 				writeAudioBuffer((BYTE*)aPtrData,
 					aByteSize);
@@ -105,6 +102,13 @@ namespace CaptureManager
 
 		// CaptureInvoker implementation
 
+		HRESULT __stdcall AudioCaptureProcessorProxy::starting()
+		{
+			mPrevTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+
+			return S_OK;
+		}
+
 		HRESULT STDMETHODCALLTYPE AudioCaptureProcessorProxy::invoke()
 		{
 			HRESULT lresult(E_NOTIMPL);
@@ -114,6 +118,8 @@ namespace CaptureManager
 
 				if (mState != SourceState::SourceStateStarted)
 				{
+					Sleep(10);
+
 					lresult = S_OK;
 
 					break;
@@ -123,18 +129,6 @@ namespace CaptureManager
 
 				if (mIsCallBack == FALSE)
 				{
-
-					if (mFirstInvoke)
-					{
-						mPrevTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
-
-						mFirstInvoke = false;
-
-						lresult = S_OK;
-
-						break;
-					}
-
 					auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
 
 					auto ldif = lCurrentTime - mPrevTime;
@@ -167,10 +161,9 @@ namespace CaptureManager
 					LOG_INVOKE_QUERY_INTERFACE_METHOD(this, &lISourceRequestResult);
 
 					mICaptureProcessor->sourceRequest(lISourceRequestResult);
+				}
 
-					Sleep(mSleepDuration);
-				}			
-
+			SHUTDOWN_LABLE:
 				lresult = S_OK;
 
 			} while (false);
@@ -479,10 +472,10 @@ namespace CaptureManager
 
 					lSampleTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
 
-					if (mPrevSampleTime > 0)
-					{
-						lSampleDuration = lSampleTime - mPrevSampleTime;
-					}
+					//if (mPrevSampleTime > 0)
+					//{
+					//	lSampleDuration = lSampleTime - mPrevSampleTime;
+					//}
 
 					mPrevSampleTime = lSampleTime;
 				}
@@ -522,8 +515,6 @@ namespace CaptureManager
 
 					break;
 				}
-
-				mFirstInvoke = true;
 
 				mDeltaTimeDuration = 0;
 
@@ -567,27 +558,6 @@ namespace CaptureManager
 
 			return lresult;
 		}
-
-		//HRESULT AudioCaptureProcessorProxy::allocateBuffer()
-		//{
-		//	HRESULT lresult;
-
-		//	do
-		//	{
-		//		mCurrentMediaBuffer.Release();
-
-		//		LOG_INVOKE_MF_FUNCTION(MFCreateMemoryBuffer, mExpectedBufferSize, &mCurrentMediaBuffer);
-
-		//		LOG_CHECK_PTR_MEMORY(mCurrentMediaBuffer);
-
-		//		LOG_INVOKE_MF_METHOD(SetCurrentLength, mCurrentMediaBuffer, mExpectedBufferSize);
-
-		//		mBufferOffset = 0;
-
-		//	} while (false);
-
-		//	return lresult;
-		//}
 
 		HRESULT AudioCaptureProcessorProxy::stop()
 		{

@@ -1729,13 +1729,28 @@ namespace CaptureManager
 									D3D11_BIND_RENDER_TARGET
 								);
 
-								LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
-									lVideoSampleAllocatorEx,
-									30,
-									30,
-									inputAttr.get(),
-									lCurrentMediaType
-								);
+								do
+								{
+									LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
+										lVideoSampleAllocatorEx,
+										30,
+										30,
+										inputAttr.get(),
+										lCurrentMediaType
+									);
+
+								} while (false);
+
+								if (FAILED(lresult))
+								{
+									LOG_INVOKE_POINTER_METHOD(
+										lVideoSampleAllocatorEx,
+										InitializeSampleAllocator,
+										5,
+										lCurrentMediaType
+									);
+								}
+
 							}
 
 							if ((*lIter).second.mVideoSurfaceCopier)

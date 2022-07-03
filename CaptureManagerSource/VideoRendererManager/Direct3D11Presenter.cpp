@@ -117,7 +117,6 @@ namespace CaptureManager
 							ZeroMemory(&scd, sizeof(scd));
 							scd.SampleDesc.Count = 1;
 							scd.SampleDesc.Quality = 0;
-							scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 							scd.Scaling = DXGI_SCALING_STRETCH;
 							scd.Width = mImageWidth;
 							scd.Height = mImageHeight;
@@ -125,8 +124,12 @@ namespace CaptureManager
 							scd.Stereo = FALSE;
 							scd.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
 							scd.Flags = 0;// m_bStereoEnabled ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0; //opt in to do direct flip;
-							scd.BufferCount = 4;
+						
 							//scd.AlphaMode = DXGI_ALPHA_MODE::DXGI_ALPHA_MODE_STRAIGHT;
+							//scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+							//scd.BufferCount = 4;
+							scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+							scd.BufferCount = 2;
 
 							mSwapChain1.Release();
 
@@ -209,11 +212,6 @@ namespace CaptureManager
 							CComPtrCustom<ID3D11Resource> l_Resource;
 							
 							lresult = mD3D11Device->OpenSharedResource(aHandle, IID_PPV_ARGS(&l_Resource));
-
-							if (SUCCEEDED(lresult))
-							{
-								lresult = l_Resource->QueryInterface(IID_PPV_ARGS(&lID3D11Texture2D));
-							}
 
 							if (SUCCEEDED(lresult))
 							{
@@ -671,11 +669,12 @@ namespace CaptureManager
 
 						LOG_INVOKE_FUNCTION(Singleton<Direct3D11Manager>::getInstance().getState);
 
-						mD3D11Device.Release();
+						if (!mD3D11Device)
+						{
+							LOG_INVOKE_FUNCTION(createDevice, &mD3D11Device);
 
-						LOG_INVOKE_FUNCTION(createDevice, &mD3D11Device);
-
-						LOG_CHECK_PTR_MEMORY(mD3D11Device);
+							LOG_CHECK_PTR_MEMORY(mD3D11Device);
+						}
 
 						CComPtrCustom<ID3D11VideoDevice> lDX11VideoDevice;
 
@@ -683,17 +682,19 @@ namespace CaptureManager
 						
 						LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
 
-						mDeviceManager.Release();
-												
-						LOG_INVOKE_MF_FUNCTION(MFCreateDXGIDeviceManager,
-							&mDeviceResetToken,
-							&mDeviceManager);
-						
-						LOG_CHECK_PTR_MEMORY(mDeviceManager);
-						
-						LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
-							mD3D11Device,
-							mDeviceResetToken);
+						if (!mDeviceManager)
+						{
+							LOG_INVOKE_MF_FUNCTION(MFCreateDXGIDeviceManager,
+								&mDeviceResetToken,
+								&mDeviceManager);
+
+							LOG_CHECK_PTR_MEMORY(mDeviceManager);
+
+							LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+								mD3D11Device,
+								mDeviceResetToken);
+
+						}
 
 						MFRatio lFrameRate;
 
@@ -710,18 +711,9 @@ namespace CaptureManager
 
 						LOG_CHECK_PTR_MEMORY(mMixer);
 												
-						CComPtrCustom<IUnknown> lDeviceManager;
-						
-						LOG_INVOKE_POINTER_METHOD(this, GetService,
-							MR_VIDEO_ACCELERATION_SERVICE,
-							__uuidof(IMFDXGIDeviceManager),
-							(void**)&lDeviceManager);
-
-						LOG_CHECK_PTR_MEMORY(lDeviceManager);
-
 						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, 0);
 
-						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)lDeviceManager.get());
+						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)mDeviceManager.get());
 						
 						if (mCurrentMediaType)
 						{
@@ -902,7 +894,6 @@ namespace CaptureManager
 						ZeroMemory(&scd, sizeof(scd));
 						scd.SampleDesc.Count = 1;
 						scd.SampleDesc.Quality = 0;
-						scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 						scd.Scaling = DXGI_SCALING_STRETCH;
 						scd.Width = mImageWidth;
 						scd.Height = mImageHeight;
@@ -910,7 +901,11 @@ namespace CaptureManager
 						scd.Stereo = FALSE;
 						scd.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
 						scd.Flags = 0;// m_bStereoEnabled ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH : 0; //opt in to do direct flip;
-						scd.BufferCount = 4;
+					
+						//scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+						//scd.BufferCount = 4;
+						scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+						scd.BufferCount = 2;
 						
 						mSwapChain1.Release();
 

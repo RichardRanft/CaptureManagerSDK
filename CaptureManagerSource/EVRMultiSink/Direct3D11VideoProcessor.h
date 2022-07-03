@@ -43,6 +43,8 @@ namespace EVRMultiSink
 
 						DXVA2_Fixed32 mDXVA2_Fixed32;
 
+						SIZE mSIZE;
+
 						StreamInfo()
 						{
 							ZeroMemory(&mDestVideoNormalizedRect, sizeof(mDestVideoNormalizedRect));

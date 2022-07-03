@@ -362,30 +362,30 @@ namespace CaptureManager
 
 
 
-					using namespace pugi;
+					//using namespace pugi;
 
-					xml_document lxmlDoc;
+					//xml_document lxmlDoc;
 
-					auto ldeclNode = lxmlDoc.append_child(node_declaration);
+					//auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-					ldeclNode.append_attribute(L"version") = L"1.0";
+					//ldeclNode.append_attribute(L"version") = L"1.0";
 
-					xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+					//xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-					lcommentNode.set_value(L"XML Document of sources");
+					//lcommentNode.set_value(L"XML Document of sources");
 
-					auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-					DataParser::readMediaType(
-						*aPtrPtrDownStreamMediaType,
-						lRootXMLElement);
+					//auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+					//DataParser::readMediaType(
+					//	*aPtrPtrDownStreamMediaType,
+					//	lRootXMLElement);
 
-					std::wstringstream lwstringstream;
+					//std::wstringstream lwstringstream;
 
-					lxmlDoc.print(lwstringstream);
+					//lxmlDoc.print(lwstringstream);
 
-					std::wstring lXMLDocumentString;
+					//std::wstring lXMLDocumentString;
 
-					lXMLDocumentString = lwstringstream.str();
+					//lXMLDocumentString = lwstringstream.str();
 
 					if (FAILED(lresult))
 					{
@@ -727,21 +727,20 @@ namespace CaptureManager
 
 					if (FAILED(lresult))
 					{
+						lMediaType.Release();
+
 						LOG_INVOKE_FUNCTION(createMediaType,
 							aPtrUpStreamMediaType,
-							MFVideoFormat_NV12,
-							 //MFVideoFormat_RGB32,
+							//MFVideoFormat_NV12,
+							 MFVideoFormat_RGB32,
 							&lMediaType);
-
-						LOG_CHECK_PTR_MEMORY(lMediaType);
-
-						LOG_INVOKE_MF_METHOD(SetCurrentMediaType,
-							aPtrMediaTypeHandler,
-							lMediaType);
-
 					}
-										
+
 					LOG_CHECK_PTR_MEMORY(lMediaType);
+
+					LOG_INVOKE_MF_METHOD(SetCurrentMediaType,
+						aPtrMediaTypeHandler,
+						lMediaType);
 
 					CComPtrCustom<IMFAttributes> inputAttr;
 					
@@ -761,12 +760,24 @@ namespace CaptureManager
 						D3D11_BIND_RENDER_TARGET
 						);
 
-					LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
-						aPtrIMFVideoSampleAllocatorEx,
-						1,
-						50,
-						inputAttr.get(),
-						lMediaType.get());
+					do
+					{
+						LOG_INVOKE_MF_METHOD(InitializeSampleAllocatorEx,
+							aPtrIMFVideoSampleAllocatorEx,
+							3,
+							50,
+							inputAttr.get(),
+							lMediaType.get());
+
+					} while (false);
+
+					if (FAILED(lresult))
+					{
+						LOG_INVOKE_POINTER_METHOD(aPtrIMFVideoSampleAllocatorEx, 
+							InitializeSampleAllocator,
+							5, 
+							lMediaType.get());
+					}
 
 					CComPtrCustom<IUnknown> lUnknown;
 
@@ -925,33 +936,6 @@ namespace CaptureManager
 					lMediaType.Release();
 
 					aPtrMediaTypeHandler->GetCurrentMediaType(&lMediaType);
-
-
-					using namespace pugi;
-
-					xml_document lxmlDoc;
-
-					auto ldeclNode = lxmlDoc.append_child(node_declaration);
-
-					ldeclNode.append_attribute(L"version") = L"1.0";
-
-					xml_node lcommentNode = lxmlDoc.append_child(node_comment);
-
-					lcommentNode.set_value(L"XML Document of sources");
-
-					auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-					DataParser::readMediaType(
-						lMediaType,
-						lRootXMLElement);
-
-					std::wstringstream lwstringstream;
-
-					lxmlDoc.print(lwstringstream);
-
-					std::wstring lXMLDocumentString;
-
-					lXMLDocumentString = lwstringstream.str();
-
 					
 					do
 					{
@@ -2071,30 +2055,30 @@ namespace CaptureManager
 					
 					LOG_CHECK_PTR_MEMORY(lColorConverterTransform);
 					
-					using namespace pugi;
+					//using namespace pugi;
 
-					xml_document lxmlDoc;
+					//xml_document lxmlDoc;
 
-					auto ldeclNode = lxmlDoc.append_child(node_declaration);
+					//auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-					ldeclNode.append_attribute(L"version") = L"1.0";
+					//ldeclNode.append_attribute(L"version") = L"1.0";
 
-					xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+					//xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-					lcommentNode.set_value(L"XML Document of sources");
+					//lcommentNode.set_value(L"XML Document of sources");
 
-					auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-					DataParser::readMediaType(
-						aPtrDownStreamMediaType,
-						lRootXMLElement);
+					//auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+					//DataParser::readMediaType(
+					//	aPtrDownStreamMediaType,
+					//	lRootXMLElement);
 
-					std::wstringstream lwstringstream;
+					//std::wstringstream lwstringstream;
 
-					lxmlDoc.print(lwstringstream);
+					//lxmlDoc.print(lwstringstream);
 
-					std::wstring lXMLDocumentString;
+					//std::wstring lXMLDocumentString;
 
-					lXMLDocumentString = lwstringstream.str();
+					//lXMLDocumentString = lwstringstream.str();
 
 					LOG_INVOKE_MF_METHOD(SetInputType, lColorConverterTransform, 0, lTempInputType, 0);
 										
@@ -2620,30 +2604,30 @@ namespace CaptureManager
 							l_UpStreamMediaType,
 							0);
 
-						using namespace pugi;
+						//using namespace pugi;
 
-						xml_document lxmlDoc;
+						//xml_document lxmlDoc;
 
-						auto ldeclNode = lxmlDoc.append_child(node_declaration);
+						//auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-						ldeclNode.append_attribute(L"version") = L"1.0";
+						//ldeclNode.append_attribute(L"version") = L"1.0";
 
-						xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+						//xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-						lcommentNode.set_value(L"XML Document of sources");
+						//lcommentNode.set_value(L"XML Document of sources");
 
-						auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-						DataParser::readMediaType(
-							l_UpStreamMediaType,
-							lRootXMLElement);
+						//auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+						//DataParser::readMediaType(
+						//	l_UpStreamMediaType,
+						//	lRootXMLElement);
 
-						std::wstringstream lwstringstream;
+						//std::wstringstream lwstringstream;
 
-						lxmlDoc.print(lwstringstream);
+						//lxmlDoc.print(lwstringstream);
 
-						std::wstring lXMLDocumentString;
+						//std::wstring lXMLDocumentString;
 
-						lXMLDocumentString = lwstringstream.str();
+						//lXMLDocumentString = lwstringstream.str();
 						
 						DWORD lOutputIndex = 0;
 
@@ -2868,30 +2852,30 @@ namespace CaptureManager
 					BOOL lCompareResult = FALSE;
 
 
-					using namespace pugi;
+					//using namespace pugi;
 
-					xml_document lxmlDoc;
+					//xml_document lxmlDoc;
 
-					auto ldeclNode = lxmlDoc.append_child(node_declaration);
+					//auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-					ldeclNode.append_attribute(L"version") = L"1.0";
+					//ldeclNode.append_attribute(L"version") = L"1.0";
 
-					xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+					//xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-					lcommentNode.set_value(L"XML Document of sources");
+					//lcommentNode.set_value(L"XML Document of sources");
 
-					auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-					DataParser::readMediaType(
-						aPtrUpStreamMediaType,
-						lRootXMLElement);
+					//auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+					//DataParser::readMediaType(
+					//	aPtrUpStreamMediaType,
+					//	lRootXMLElement);
 
-					std::wstringstream lwstringstream;
+					//std::wstringstream lwstringstream;
 
-					lxmlDoc.print(lwstringstream);
+					//lxmlDoc.print(lwstringstream);
 
-					std::wstring lXMLDocumentString;
+					//std::wstring lXMLDocumentString;
 
-					lXMLDocumentString = lwstringstream.str();
+					//lXMLDocumentString = lwstringstream.str();
 
 
 
@@ -3089,33 +3073,33 @@ namespace CaptureManager
 							l_UpStreamMediaType);
 
 
-						{
+						//{
 
-							using namespace pugi;
+						//	using namespace pugi;
 
-							xml_document lxmlDoc;
+						//	xml_document lxmlDoc;
 
-							auto ldeclNode = lxmlDoc.append_child(node_declaration);
+						//	auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-							ldeclNode.append_attribute(L"version") = L"1.0";
+						//	ldeclNode.append_attribute(L"version") = L"1.0";
 
-							xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+						//	xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-							lcommentNode.set_value(L"XML Document of sources");
+						//	lcommentNode.set_value(L"XML Document of sources");
 
-							auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-							DataParser::readMediaType(
-								aPtrUpStreamMediaType,
-								lRootXMLElement);
+						//	auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+						//	DataParser::readMediaType(
+						//		aPtrUpStreamMediaType,
+						//		lRootXMLElement);
 
-							std::wstringstream lwstringstream;
+						//	std::wstringstream lwstringstream;
 
-							lxmlDoc.print(lwstringstream);
+						//	lxmlDoc.print(lwstringstream);
 
-							std::wstring lXMLDocumentString;
+						//	std::wstring lXMLDocumentString;
 
-							lXMLDocumentString = lwstringstream.str();
-						}
+						//	lXMLDocumentString = lwstringstream.str();
+						//}
 												
 						LOG_INVOKE_MF_METHOD(SetInputType,
 							lDecoderTransform,
@@ -3123,33 +3107,33 @@ namespace CaptureManager
 							l_UpStreamMediaType,
 							0);
 
-						{
+						//{
 
-							using namespace pugi;
+						//	using namespace pugi;
 
-							xml_document lxmlDoc;
+						//	xml_document lxmlDoc;
 
-							auto ldeclNode = lxmlDoc.append_child(node_declaration);
+						//	auto ldeclNode = lxmlDoc.append_child(node_declaration);
 
-							ldeclNode.append_attribute(L"version") = L"1.0";
+						//	ldeclNode.append_attribute(L"version") = L"1.0";
 
-							xml_node lcommentNode = lxmlDoc.append_child(node_comment);
+						//	xml_node lcommentNode = lxmlDoc.append_child(node_comment);
 
-							lcommentNode.set_value(L"XML Document of sources");
+						//	lcommentNode.set_value(L"XML Document of sources");
 
-							auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
-							DataParser::readMediaType(
-								aPtrUpStreamMediaType,
-								lRootXMLElement);
+						//	auto lRootXMLElement = lxmlDoc.append_child(L"Sources");
+						//	DataParser::readMediaType(
+						//		aPtrUpStreamMediaType,
+						//		lRootXMLElement);
 
-							std::wstringstream lwstringstream;
+						//	std::wstringstream lwstringstream;
 
-							lxmlDoc.print(lwstringstream);
+						//	lxmlDoc.print(lwstringstream);
 
-							std::wstring lXMLDocumentString;
+						//	std::wstring lXMLDocumentString;
 
-							lXMLDocumentString = lwstringstream.str();
-						}
+						//	lXMLDocumentString = lwstringstream.str();
+						//}
 
 						DWORD lOutputIndex = 0;
 

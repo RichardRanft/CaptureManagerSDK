@@ -45,7 +45,74 @@ namespace CaptureManager
 	{
 		namespace CustomisedMediaSession
 		{
+
 			using namespace Core;
+
+			static HRESULT createUncompressedMediaType(
+				UINT32 aSamplePerSecond,
+				UINT32 aNumChannels,
+				UINT32 aBitsPerSample,
+				IMFMediaType** aPtrPtrStubUncompressedMediaType)
+			{
+				HRESULT lresult;
+
+				do
+				{
+					LOG_CHECK_PTR_MEMORY(aPtrPtrStubUncompressedMediaType);
+
+					UINT32 lbytePerSample = aBitsPerSample / 8;
+
+					CComPtrCustom<IMFMediaType> lMediaType;
+
+					LOG_INVOKE_MF_FUNCTION(MFCreateMediaType, &lMediaType);
+
+					LOG_INVOKE_MF_METHOD(SetGUID,
+						lMediaType,
+						MF_MT_MAJOR_TYPE,
+						MFMediaType_Audio);
+
+					LOG_INVOKE_MF_METHOD(SetGUID,
+						lMediaType,
+						MF_MT_SUBTYPE,
+						MFAudioFormat_Float);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_ALL_SAMPLES_INDEPENDENT,
+						1);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_AUDIO_AVG_BYTES_PER_SECOND,
+						aSamplePerSecond * aNumChannels * lbytePerSample);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_AUDIO_BITS_PER_SAMPLE,
+						aBitsPerSample);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_AUDIO_BLOCK_ALIGNMENT,
+						aNumChannels * lbytePerSample);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_AUDIO_SAMPLES_PER_SECOND,
+						aSamplePerSecond);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lMediaType,
+						MF_MT_AUDIO_NUM_CHANNELS,
+						aNumChannels);
+
+					*aPtrPtrStubUncompressedMediaType = lMediaType.detach();
+
+				} while (false);
+
+				return lresult;
+			}
+
 
 			// {64ABBDD2-B84C-4C39-9F19-04BE6AF125F9}
 			static const GUID MediaStreamID =
@@ -734,6 +801,10 @@ namespace CaptureManager
 					CComQIPtrCustom<IMFStreamSink> lStreamSink = aPtrICustomisedRequest->getPtrUnkSender();
 
 					LOG_CHECK_PTR_MEMORY(lStreamSink);
+
+					CComQIPtrCustom<IMFTopologyNode> lTopologyNode = aPtrICustomisedRequest->getPtrUnkSenderTopologyNode();
+
+					LOG_CHECK_PTR_MEMORY(lTopologyNode);
 					
 					LOG_INVOKE_MF_METHOD(EndGetEvent,
 						lStreamSink,
@@ -743,10 +814,224 @@ namespace CaptureManager
 					LOG_INVOKE_MF_METHOD(GetType,
 						lEvent,
 						&leventType);
-					
-					CComQIPtrCustom<IMFTopologyNode> lTopologyNode = aPtrICustomisedRequest->getPtrUnkSenderTopologyNode();
 
-					LOG_CHECK_PTR_MEMORY(lTopologyNode);
+					if (leventType == MEExtendedType)
+					{
+						GUID lGUIDExtendedType = GUID_NULL;
+						do
+						{
+
+							LOG_INVOKE_MF_METHOD(GetExtendedType,
+								lEvent,
+								lGUIDExtendedType);
+
+							if (lGUIDExtendedType == MF_MEEXT_SAR_AUDIO_ENDPOINT_CHANGED)
+							{
+								CComPtrCustom<IMFMediaSink> lIMFMediaSink;
+
+								lStreamSink->GetMediaSink(&lIMFMediaSink);
+
+								CComPtrCustom<IMFMediaTypeHandler> lMediaTypeHandler;
+
+								LOG_INVOKE_MF_METHOD(GetMediaTypeHandler,
+									lStreamSink,
+									&lMediaTypeHandler);
+
+								LOG_CHECK_PTR_MEMORY(lMediaTypeHandler);
+
+
+								UINT32 lSAROutputNode = 0;
+
+								LOG_INVOKE_MF_METHOD(GetUINT32,
+									lTopologyNode,
+									CM_SAROutputNode,
+									&lSAROutputNode);
+
+								if (lSAROutputNode != 0)
+								{
+									CComPtrCustom<IMFMediaType> lDownStreamMediaType;
+
+									CComPtrCustom<IMFTopologyNode> lUpTopologyNode;
+
+									DWORD lInputIndexOnDownstreamNode;
+
+									LOG_INVOKE_MF_METHOD(GetInput,
+										lTopologyNode,
+										0,
+										&lUpTopologyNode,
+										&lInputIndexOnDownstreamNode);
+
+									if (lUpTopologyNode)
+									{
+										lDownStreamMediaType.Release();
+
+										do
+										{
+											LOG_INVOKE_MF_METHOD(GetCurrentMediaType,
+												lMediaTypeHandler,
+												&lDownStreamMediaType);
+										} while (false);
+
+
+										if (!lDownStreamMediaType)
+										{
+											do
+											{
+												CComPtrCustom<IMFMediaType> lTempDownStreamMediaType;
+
+												// 32 bits
+
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(16000, 2, 32, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(32000, 2, 32, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(44100, 2, 32, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(48000, 2, 32, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(96000, 2, 32, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+
+												// 16 bits
+
+
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(16000, 2, 16, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(32000, 2, 16, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(44100, 2, 16, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(48000, 2, 16, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+												{
+													lDownStreamMediaType.Release();
+
+													createUncompressedMediaType(96000, 2, 16, &lDownStreamMediaType);
+
+													lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+													if (lresult == S_OK)
+														break;
+												}
+
+											} while (false);
+
+										}
+
+										LOG_CHECK_STATE_DESCR(FAILED(lresult), lresult);
+
+										LOG_CHECK_PTR_MEMORY(lDownStreamMediaType);
+
+										LOG_CHECK_PTR_MEMORY(lDownStreamMediaType);
+
+										LOG_INVOKE_MF_METHOD(SetCurrentMediaType,
+											lMediaTypeHandler,
+											lDownStreamMediaType);
+
+
+										CComPtrCustom<IUnknown> lUnkAudioResamplerTransform;
+
+										CComQIPtrCustom<IMFTransform> lAudioResamplerTransform;
+
+										LOG_INVOKE_MF_METHOD(GetObject,
+											lUpTopologyNode,
+											&lUnkAudioResamplerTransform);
+
+										lAudioResamplerTransform = lUnkAudioResamplerTransform;
+
+
+										LOG_INVOKE_MF_METHOD(SetOutputType, lAudioResamplerTransform,
+											0, lDownStreamMediaType, 0);
+
+										//if (lAudioResamplerTransform)
+										//{
+										//	LOG_INVOKE_MF_METHOD(SetOutputType, lAudioResamplerTransform,
+										//		0, lDownStreamMediaType, 0);
+
+
+										//	LOG_INVOKE_MF_METHOD(ProcessMessage, lAudioResamplerTransform,
+										//		MFT_MESSAGE_COMMAND_FLUSH, NULL);
+										//}
+
+										lStreamSink->Flush();
+									}
+								}
+							};
+
+						} while (false);
+					}
 					
 					if (leventType == MEStreamSinkStarted)
 					{

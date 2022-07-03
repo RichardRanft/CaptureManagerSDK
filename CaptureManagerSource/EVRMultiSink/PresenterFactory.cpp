@@ -83,28 +83,28 @@ namespace EVRMultiSink
 
 						if (FAILED(lresult))
 						{
-							do
-							{
+							//do
+							//{
 
-								LOG_INVOKE_FUNCTION(createFromSharedHandler,
-									aHandle,
-									aOutputNodeAmount,
-									aPtrPresenter,
-									aPtrPtrMixer);
+							//	LOG_INVOKE_FUNCTION(createFromSharedHandler,
+							//		aHandle,
+							//		aOutputNodeAmount,
+							//		aPtrPresenter,
+							//		aPtrPtrMixer);
 
-							} while (false);
+							//} while (false);
 
 							//if (FAILED(lresult))
-							//{
-							//	do
-							//	{
-							//		LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
-							//			aHandle,
-							//			aOutputNodeAmount,
-							//			aPtrPresenter,
-							//			aPtrPtrMixer);
-							//	} while (false);							
-							//}
+							{
+								do
+								{
+									LOG_INVOKE_FUNCTION(createDirect3D11PresenterFromWindowHandler,
+										aHandle,
+										aOutputNodeAmount,
+										aPtrPresenter,
+										aPtrPtrMixer);
+								} while (false);							
+							}
 							
 /*							if (FAILED(lresult))
 							{
@@ -143,16 +143,17 @@ namespace EVRMultiSink
 
 						if (lDirect3DSurface9)
 						{
-							CComPtrCustom<Direct3D9Presenter> lDirect3D9Presenter(new (std::nothrow) Direct3D9Presenter);
+							CComPtrCustom<Direct3D11Presenter> lPresenter(new (std::nothrow) Direct3D11Presenter);
 
-							LOG_CHECK_PTR_MEMORY(lDirect3D9Presenter);
+							LOG_CHECK_PTR_MEMORY(lPresenter);
 
 							CComPtrCustom<IMFTransform> lMixer;
 
-							LOG_INVOKE_FUNCTION(EVR::Mixer::DXVAVideoProcessor::createDXVAVideoProcessor,
-								&lMixer);
+							LOG_INVOKE_FUNCTION(EVR::Mixer::Direct3D11VideoProcessor::createProcessor,
+								&lMixer,
+								aOutputNodeAmount);
 
-							LOG_INVOKE_POINTER_METHOD(lDirect3D9Presenter, initialize,
+							LOG_INVOKE_POINTER_METHOD(lPresenter, initialize,
 								1920,
 								1080,
 								30,
@@ -161,7 +162,7 @@ namespace EVRMultiSink
 
 							CComPtrCustom<IPresenterInit> lPresenterInit;
 
-							LOG_INVOKE_QUERY_INTERFACE_METHOD(lDirect3D9Presenter, &lPresenterInit);
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(lPresenter, &lPresenterInit);
 
 							LOG_CHECK_PTR_MEMORY(lPresenterInit);
 
@@ -169,7 +170,7 @@ namespace EVRMultiSink
 								aHandle,
 								lDirect3DSurface9.get());
 
-							LOG_INVOKE_QUERY_INTERFACE_METHOD(lDirect3D9Presenter, aPtrPresenter);
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(lPresenter, aPtrPresenter);
 
 							LOG_INVOKE_QUERY_INTERFACE_METHOD(lMixer, aPtrPtrMixer);
 
@@ -223,14 +224,15 @@ namespace EVRMultiSink
 
 					LOG_CHECK_STATE_DESCR(aOutputNodeAmount > lMaxInputStreamCount, E_INVALIDARG);
 					
-					CComPtrCustom<IMFTransform> lMixer;
-
-					CComPtrCustom<Direct3D9Presenter> lPresenter(new (std::nothrow) Direct3D9Presenter);
+					CComPtrCustom<Direct3D11Presenter> lPresenter(new (std::nothrow) Direct3D11Presenter);
 
 					LOG_CHECK_PTR_MEMORY(lPresenter);
 
-					LOG_INVOKE_FUNCTION(EVR::Mixer::DXVAVideoProcessor::createDXVAVideoProcessor,
-						&lMixer);
+					CComPtrCustom<IMFTransform> lMixer;
+
+					LOG_INVOKE_FUNCTION(EVR::Mixer::Direct3D11VideoProcessor::createProcessor,
+						&lMixer,
+						aOutputNodeAmount);
 
 					LOG_CHECK_PTR_MEMORY(lMixer);
 
@@ -360,19 +362,19 @@ namespace EVRMultiSink
 						1,
 						lMixer);
 
-					LOG_INVOKE_POINTER_METHOD(lPresenter,
-						setVideoWindowHandle,
-						(HWND)aHandle);
+					//LOG_INVOKE_POINTER_METHOD(lPresenter,
+					//	setVideoWindowHandle,
+					//	(HWND)aHandle);
 
-					//CComPtrCustom<IPresenterInit> lPresenterInit;
+					CComPtrCustom<IPresenterInit> lPresenterInit;
 
-					//LOG_INVOKE_QUERY_INTERFACE_METHOD(lPresenter, &lPresenterInit);
+					LOG_INVOKE_QUERY_INTERFACE_METHOD(lPresenter, &lPresenterInit);
 
-					//LOG_CHECK_PTR_MEMORY(lPresenterInit);
+					LOG_CHECK_PTR_MEMORY(lPresenterInit);
 
-					//LOG_INVOKE_POINTER_METHOD(lPresenterInit, initializeSharedTarget,
-					//	aHandle,
-					//	nullptr);
+					LOG_INVOKE_POINTER_METHOD(lPresenterInit, initializeSharedTarget,
+						aHandle,
+						nullptr);
 
 					LOG_INVOKE_QUERY_INTERFACE_METHOD(lPresenter, aPtrPresenter);
 
@@ -587,7 +589,7 @@ namespace EVRMultiSink
 				{
 					LOG_CHECK_PTR_MEMORY(aPtrMaxInputStreamCount);
 					
-					*aPtrMaxInputStreamCount = Singleton<ConfigManager>::getInstance().getMaxVideoRenderStreamCount();
+					*aPtrMaxInputStreamCount = 1;// Singleton<ConfigManager>::getInstance().getMaxVideoRenderStreamCount();
 
 					lresult = S_OK;
 

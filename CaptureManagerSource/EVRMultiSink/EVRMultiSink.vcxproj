@@ -22,7 +22,7 @@
     <ProjectGuid>{DFD129F0-9EA4-4837-8858-B8CE1D9FC116}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>EVRMultiSink</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

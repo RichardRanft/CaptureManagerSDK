@@ -68,6 +68,8 @@ namespace CaptureManager
 
 					if (mmcssHandle != nullptr)
 						AvrtManager::AvSetMmThreadPriority(mmcssHandle, mAVRT_PRIORITY_AvrtManager);
+
+					starting();
 															
 					while (mCaptureInvokerState == CaptureInvokerState::Started)
 					{
@@ -115,15 +117,11 @@ namespace CaptureManager
 		
 		HRESULT STDMETHODCALLTYPE CaptureInvoker::invoke()
 		{
-			HRESULT lresult(E_NOTIMPL);
-
-			do
-			{
-				lresult = S_OK;
-
-			} while (false);
-
-			return lresult;
+			return E_NOTIMPL;
+		}
+		HRESULT STDMETHODCALLTYPE CaptureInvoker::starting()
+		{
+			return E_NOTIMPL;
 		}
 	}
 }

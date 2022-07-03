@@ -22,7 +22,7 @@
     <ProjectGuid>{8044EBC0-BAC5-4C24-B631-BC6F6AFF40A7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CustomisedPresentationClock</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

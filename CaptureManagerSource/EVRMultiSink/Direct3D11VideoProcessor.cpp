@@ -37,10 +37,6 @@ SOFTWARE.
 #include <DXGI1_2.h>
 #include <D3d11.h>
 
-extern void OutputLog(const char *szFormat, ...);
-
-MFTIME mLastTime1 = 0;
-
 namespace EVRMultiSink
 {
 	namespace Sinks
@@ -54,7 +50,7 @@ namespace EVRMultiSink
 				
 				GUID const* const g_pVideoFormats[] =
 				{
-					&MFVideoFormat_NV12,
+					&MFVideoFormat_NV12/*,
 					&MFVideoFormat_IYUV,
 					&MFVideoFormat_YUY2,
 					&MFVideoFormat_YV12,
@@ -72,7 +68,7 @@ namespace EVRMultiSink
 					&MFVideoFormat_v410,
 					&MFVideoFormat_I420,
 					&MFVideoFormat_NV11,
-					&MFVideoFormat_420O
+					&MFVideoFormat_420O*/
 				};
 
 				const Direct3D11VideoProcessor::FormatEntry Direct3D11VideoProcessor::mDXGIFormatMapping[] =
@@ -1056,7 +1052,7 @@ namespace EVRMultiSink
 
 						LOG_CHECK_STATE_DESCR(lGUID != MFMediaType_Video, MF_E_INVALIDMEDIATYPE);
 
-						std::lock_guard<std::mutex> lock(mMutex);
+						//std::lock_guard<std::mutex> lock(mMutex);
 
 						LOG_INVOKE_MF_METHOD(GetGUID, aPtrType,
 							MF_MT_SUBTYPE,
@@ -1090,100 +1086,116 @@ namespace EVRMultiSink
 						LOG_CHECK_STATE_DESCR(lDxgiFormat == DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, MF_E_INVALIDMEDIATYPE);
 
 
-						CComPtrCustom<ID3D11VideoDevice> lVideoDevice;
+						//CComPtrCustom<ID3D11VideoDevice> lVideoDevice;
 
-						LOG_INVOKE_FUNCTION(getVideoProcessorService,
-							mDeviceManager,
-							&lVideoDevice);
-
-
-
-						UINT32 lInputWidth = 0;
-
-						UINT32 lInputHeight = 0;
-
-						LOG_INVOKE_FUNCTION(MFGetAttributeSize,
-							aPtrType,
-							MF_MT_FRAME_SIZE,
-							&lInputWidth,
-							&lInputHeight);
-
-						MFRatio lInputframeRate;
-
-						LOG_INVOKE_FUNCTION(MFGetAttributeRatio,
-							aPtrType,
-							MF_MT_FRAME_RATE,
-							(UINT32*)&lInputframeRate.Numerator,
-							(UINT32*)&lInputframeRate.Denominator);
-						
-
-						UINT32 lOutputWidth = 0;
-
-						UINT32 lOutputHeight = 0;
-
-						LOG_INVOKE_FUNCTION(MFGetAttributeSize,
-							mOutputMediaType,
-							MF_MT_FRAME_SIZE,
-							&lOutputWidth,
-							&lOutputHeight);
-
-						MFRatio lOutputframeRate;
-
-						LOG_INVOKE_FUNCTION(MFGetAttributeRatio,
-							mOutputMediaType,
-							MF_MT_FRAME_RATE,
-							(UINT32*)&lOutputframeRate.Numerator,
-							(UINT32*)&lOutputframeRate.Denominator);
-						
-						
-						//Check if the format is supported
-
-						D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
-						ZeroMemory(&ContentDesc, sizeof(ContentDesc));
-						ContentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
-						ContentDesc.InputWidth = lInputWidth;
-						ContentDesc.InputHeight = lInputHeight;
-						ContentDesc.OutputWidth = lOutputWidth;
-						ContentDesc.OutputHeight = lOutputHeight;
-						ContentDesc.InputFrameRate.Numerator = lInputframeRate.Numerator;
-						ContentDesc.InputFrameRate.Denominator = lInputframeRate.Denominator;
-						ContentDesc.OutputFrameRate.Numerator = lOutputframeRate.Numerator;
-						ContentDesc.OutputFrameRate.Denominator = lOutputframeRate.Denominator;
-						ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+						//LOG_INVOKE_FUNCTION(getVideoProcessorService,
+						//	mDeviceManager,
+						//	&lVideoDevice);
 
 
 
+						//UINT32 lInputWidth = 0;
 
-						CComPtrCustom<ID3D11VideoProcessorEnumerator> lVideoProcessorEnum;
+						//UINT32 lInputHeight = 0;
 
-						LOG_INVOKE_POINTER_METHOD(lVideoDevice, CreateVideoProcessorEnumerator,
-							&ContentDesc,
-							&lVideoProcessorEnum);
+						//LOG_INVOKE_FUNCTION(MFGetAttributeSize,
+						//	aPtrType,
+						//	MF_MT_FRAME_SIZE,
+						//	&lInputWidth,
+						//	&lInputHeight);
 
-						LOG_CHECK_PTR_MEMORY(lVideoProcessorEnum);
+						//MFRatio lInputframeRate;
 
-						UINT uiFlags = D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT;
+						//LOG_INVOKE_FUNCTION(MFGetAttributeRatio,
+						//	aPtrType,
+						//	MF_MT_FRAME_RATE,
+						//	(UINT32*)&lInputframeRate.Numerator,
+						//	(UINT32*)&lInputframeRate.Denominator);
+						//
 
-						LOG_INVOKE_POINTER_METHOD(lVideoProcessorEnum, CheckVideoProcessorFormat,
-							lDxgiFormat,
-							&uiFlags);
+						//UINT32 lOutputWidth = 0;
 
-						if (SUCCEEDED(lresult) && uiFlags == 0)
-						{
-							uiFlags = D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT;
-						}
+						//UINT32 lOutputHeight = 0;
 
-						if (FAILED(lresult) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT))
-						{
-							lresult = MF_E_UNSUPPORTED_D3D_TYPE;
-							break;
-						}										
-						
+						//LOG_INVOKE_FUNCTION(MFGetAttributeSize,
+						//	mOutputMediaType,
+						//	MF_MT_FRAME_SIZE,
+						//	&lOutputWidth,
+						//	&lOutputHeight);
+
+						//MFRatio lOutputframeRate;
+
+						//LOG_INVOKE_FUNCTION(MFGetAttributeRatio,
+						//	mOutputMediaType,
+						//	MF_MT_FRAME_RATE,
+						//	(UINT32*)&lOutputframeRate.Numerator,
+						//	(UINT32*)&lOutputframeRate.Denominator);
+						//
+						//
+						////Check if the format is supported
+
+						//D3D11_VIDEO_PROCESSOR_CONTENT_DESC ContentDesc;
+						//ZeroMemory(&ContentDesc, sizeof(ContentDesc));
+						//ContentDesc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_INTERLACED_TOP_FIELD_FIRST;
+						//ContentDesc.InputWidth = lInputWidth;
+						//ContentDesc.InputHeight = lInputHeight;
+						//ContentDesc.OutputWidth = lOutputWidth;
+						//ContentDesc.OutputHeight = lOutputHeight;
+						//ContentDesc.InputFrameRate.Numerator = lInputframeRate.Numerator;
+						//ContentDesc.InputFrameRate.Denominator = lInputframeRate.Denominator;
+						//ContentDesc.OutputFrameRate.Numerator = lOutputframeRate.Numerator;
+						//ContentDesc.OutputFrameRate.Denominator = lOutputframeRate.Denominator;
+						//ContentDesc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+
+
+
+						//CComPtrCustom<ID3D11VideoProcessorEnumerator> lVideoProcessorEnum;
+
+						//LOG_INVOKE_POINTER_METHOD(lVideoDevice, CreateVideoProcessorEnumerator,
+						//	&ContentDesc,
+						//	&lVideoProcessorEnum);
+
+						//LOG_CHECK_PTR_MEMORY(lVideoProcessorEnum);
+
+						//UINT uiFlags = D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT;
+
+						//LOG_INVOKE_POINTER_METHOD(lVideoProcessorEnum, CheckVideoProcessorFormat,
+						//	lDxgiFormat,
+						//	&uiFlags);
+
+						//if (SUCCEEDED(lresult) && uiFlags == 0)
+						//{
+						//	uiFlags = D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT;
+						//}
+
+						//if (FAILED(lresult) || 0 == (uiFlags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT))
+						//{
+						//	lresult = MF_E_UNSUPPORTED_D3D_TYPE;
+						//	break;
+						//}										
+						//
 						if (aFlags != MFT_SET_TYPE_TEST_ONLY)
 						{
 							auto lIter = m_InputStreams.find(aInputStreamID);
 
-							(*lIter).second.mInputMediaType = aPtrType;														
+							(*lIter).second.mInputMediaType = aPtrType;
+
+							UINT32 lOutputWidth = 0;
+
+							UINT32 lOutputHeight = 0;
+
+							LOG_INVOKE_FUNCTION(MFGetAttributeSize,
+								aPtrType,
+								MF_MT_FRAME_SIZE,
+								&lOutputWidth,
+								&lOutputHeight);
+
+							(*lIter).second.mSIZE.cx = lOutputWidth;
+
+							(*lIter).second.mSIZE.cy = lOutputHeight;
+
+							break;
 						}
 
 					} while (false);
@@ -1654,13 +1666,6 @@ namespace EVRMultiSink
 					do
 					{
 
-
-						auto lCurrentTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
-
-						OutputLog("lCurrentTime - mLastTime1: %i\n", lCurrentTime - mLastTime1);
-
-						mLastTime1 = lCurrentTime;
-
 						LOG_CHECK_PTR_MEMORY(aPtrSample);
 
 						LOG_CHECK_PTR_MEMORY(mVideoProcessor);
@@ -1864,11 +1869,11 @@ namespace EVRMultiSink
 
 						float lPropStretchDest = (float)(lOutputRect.right - lOutputRect.left) / (float)(lOutputRect.bottom - lOutputRect.top);
 
+						std::vector<D3D11_VIDEO_PROCESSOR_STREAM> lInputStreams;
+
 						for (auto& lIndexID : mdwZOrders)
 						{
 							auto& lInputStream = mInputStreams[lStreamIndex];
-
-							UINT lCurrentStreamIndex = lStreamIndex;
 
 							lVideoContext->VideoProcessorSetStreamColorSpace(mVideoProcessor, lStreamIndex, &colorSpace);
 
@@ -1898,7 +1903,7 @@ namespace EVRMultiSink
 							CComPtrCustom<ID3D11Texture2D> lSurface;
 
 							// Get the surface from the buffer.
-							
+														
 							CComPtrCustom<IMFDXGIBuffer> lIMFDXGIBuffer;
 
 							LOG_INVOKE_QUERY_INTERFACE_METHOD(lBuffer, &lIMFDXGIBuffer);
@@ -1907,7 +1912,7 @@ namespace EVRMultiSink
 							
 							LOG_INVOKE_DXGI_METHOD(GetResource, lIMFDXGIBuffer,
 								IID_PPV_ARGS(&lSurface));
-							
+														
 							LOG_CHECK_PTR_MEMORY(lSurface);
 							
 
@@ -1942,21 +1947,26 @@ namespace EVRMultiSink
 
 
 
+							SIZE lSize = lItem.mSIZE;
 
-							D3D11_TEXTURE2D_DESC lInputDesc;
+							D3D11_TEXTURE2D_DESC lDesc;
 
-							lSurface->GetDesc(&lInputDesc);
+							lSurface->GetDesc(&lDesc);
+
+							//lSize.cx = lDesc.Width;
+
+							//lSize.cy = lDesc.Height;
 
 							
 							RECT lSubStreamSrcRect;
 
-							lSubStreamSrcRect.left = (LONG)(lItem.mSrcVideoNormalizedRect.left * (float)lInputDesc.Width);
+							lSubStreamSrcRect.left = (LONG)(lItem.mSrcVideoNormalizedRect.left * (float)lSize.cx);
 
-							lSubStreamSrcRect.right = (LONG)(lItem.mSrcVideoNormalizedRect.right * (float)lInputDesc.Width);
+							lSubStreamSrcRect.right = (LONG)(lItem.mSrcVideoNormalizedRect.right * (float)lSize.cx);
 
-							lSubStreamSrcRect.top = (LONG)(lItem.mSrcVideoNormalizedRect.top * (float)lInputDesc.Height);
+							lSubStreamSrcRect.top = (LONG)(lItem.mSrcVideoNormalizedRect.top * (float)lSize.cy);
 
-							lSubStreamSrcRect.bottom = (LONG)(lItem.mSrcVideoNormalizedRect.bottom * (float)lInputDesc.Height);
+							lSubStreamSrcRect.bottom = (LONG)(lItem.mSrcVideoNormalizedRect.bottom * (float)lSize.cy);
 
 
 							
@@ -1978,18 +1988,18 @@ namespace EVRMultiSink
 							if (lScaledHeightDest > 0.0f)
 								lPropScaled = lScaledWidthDest / lScaledHeightDest;
 
-							float lPropSrc = (float)lInputDesc.Width / (float)lInputDesc.Height;
+							float lPropSrc = (float)lSize.cx / (float)lSize.cy;
 
 							if (lisNative == FALSE)
 							{
 
 								if (lPropScaled >= lPropSrc)
 								{
-									auto lprop = lScaledHeightDest / (float)lInputDesc.Height;
+									auto lprop = lScaledHeightDest / (float)lSize.cy;
 
 									//float lw = 1.0f;// lScaledWidthDest / (float)lDestDesc.Width;
 
-									auto lidealWidth = lprop * (float)lInputDesc.Width;
+									auto lidealWidth = lprop * (float)lSize.cx;
 
 									auto lborder = (float)(lScaledWidthDest - lidealWidth) * 0.5f;
 
@@ -2003,11 +2013,11 @@ namespace EVRMultiSink
 								}
 								else
 								{
-									auto lprop = lScaledWidthDest / (float)lInputDesc.Width;
+									auto lprop = lScaledWidthDest / (float)lSize.cx;
 
 									//float lh = 1.0f;// lScaledHeightDest / (float)lDestDesc.Height;
 
-									auto lidealHeight = lprop * (float)lInputDesc.Height;
+									auto lidealHeight = lprop * (float)lSize.cy;
 
 									auto lborder = (float)(lScaledHeightDest - lidealHeight) * 0.5f;
 
@@ -2025,11 +2035,11 @@ namespace EVRMultiSink
 							{
 								if (lPropDest >= lPropSrc)
 								{
-									auto lprop = (float)lDestDesc.Height / (float)lInputDesc.Height;
+									auto lprop = (float)lDestDesc.Height / (float)lSize.cy;
 
 									float lw = lScaledWidthDest / (float)lDestDesc.Width;
 
-									auto lidealWidth = lprop * (float)lInputDesc.Width;
+									auto lidealWidth = lprop * (float)lSize.cx;
 
 									auto lborder = (float)(lDestDesc.Width - lidealWidth) * 0.5f;
 
@@ -2043,11 +2053,11 @@ namespace EVRMultiSink
 								}
 								else
 								{
-									auto lprop = (float)lScaledWidthDest / (float)lInputDesc.Width;
+									auto lprop = (float)lScaledWidthDest / (float)lSize.cx;
 
 									float lh = 1.0f;// lInputDesc.Height / (float)lDestDesc.Height;
 
-									auto lidealHeight = lprop * (float)lInputDesc.Height;
+									auto lidealHeight = lprop * (float)lSize.cy;
 
 									auto lborder = (float)(lDestDesc.Height - lidealHeight) * 0.5f;
 
@@ -2060,6 +2070,8 @@ namespace EVRMultiSink
 									lSubStreamDestRect.right = (LONG)(lLeftOffset + lScaledWidthDest);
 								}
 							}
+
+							UINT lCurrentStreamIndex = lInputStreams.size();
 
 							lVideoContext->VideoProcessorSetStreamSourceRect(
 								mVideoProcessor,
@@ -2074,17 +2086,18 @@ namespace EVRMultiSink
 								&lSubStreamDestRect
 								);
 
-							OutputLog("lCurrentStreamIndex: %i\n", lCurrentStreamIndex);
+							lInputStreams.push_back(lInputStream);
 						}
-											   																
-						lresult = lVideoContext->VideoProcessorBlt(
-							mVideoProcessor,
-							lOutputView,
-							0,
-							mInputStreams.size(),
-							mInputStreams.data());
+									
+						if(!lInputStreams.empty())
+							lresult = lVideoContext->VideoProcessorBlt(
+								mVideoProcessor,
+								lOutputView,
+								0,
+								lInputStreams.size(),
+								lInputStreams.data());
 						
-						for (auto& lInputStream : mInputStreams)
+						for (auto& lInputStream : lInputStreams)
 						{
 							if (lInputStream.pInputSurface != nullptr)
 								lInputStream.pInputSurface->Release();

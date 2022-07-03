@@ -4,6 +4,7 @@
 #include <queue>
 #include <mutex>
 #include <string>
+#include <functional>
 #include <condition_variable>
 #include "../Common/BaseUnknown.h"
 #include "../AvrtManager/AvrtManager.h"
@@ -26,6 +27,8 @@ namespace CaptureManager
 			HRESULT stop(std::function<void(void)> PostStopCallback = nullptr);
 
 			virtual HRESULT STDMETHODCALLTYPE invoke();
+
+			virtual HRESULT STDMETHODCALLTYPE starting();
 
 		private:
 

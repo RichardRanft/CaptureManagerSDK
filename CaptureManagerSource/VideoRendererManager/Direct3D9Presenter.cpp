@@ -858,8 +858,7 @@ namespace CaptureManager
 								&lState);
 							
 							if(mDevice9)
-							lresult = mDevice9->Present(nullptr, &mDestRect, mHWNDVideo, nullptr);
-
+								lresult = mDevice9->Present(nullptr, &mDestRect, mHWNDVideo, nullptr);
 						}
 						else
 						{							

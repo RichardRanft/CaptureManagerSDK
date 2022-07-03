@@ -138,56 +138,118 @@ namespace CaptureManager
 
 							if (lSAROutputNode != FALSE)
 							{
+								do
 								{
-									lDownStreamMediaType.Release();
+									CComPtrCustom<IMFMediaType> lTempDownStreamMediaType;
 
-									createUncompressedMediaType(16000, 2, 32, &lDownStreamMediaType);
+									// 32 bits
 
-									lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, NULL);
+									{
+										lDownStreamMediaType.Release();
 
-									if (lresult == S_OK)
-										break;
-								}
-								{
-									lDownStreamMediaType.Release();
+										createUncompressedMediaType(16000, 2, 32, &lDownStreamMediaType);
 
-									createUncompressedMediaType(32000, 2, 32, &lDownStreamMediaType);
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
 
-									lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, NULL);
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
 
-									if (lresult == S_OK)
-										break;
-								}
-								{
-									lDownStreamMediaType.Release();
+										createUncompressedMediaType(32000, 2, 32, &lDownStreamMediaType);
 
-									createUncompressedMediaType(44100, 2, 32, &lDownStreamMediaType);
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
 
-									lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, NULL);
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
 
-									if (lresult == S_OK)
-										break;
-								}
-								{
-									lDownStreamMediaType.Release();
+										createUncompressedMediaType(44100, 2, 32, &lDownStreamMediaType);
 
-									createUncompressedMediaType(48000, 2, 32, &lDownStreamMediaType);
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
 
-									lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, NULL);
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
 
-									if (lresult == S_OK)
-										break;
-								}
-								{
-									lDownStreamMediaType.Release();
+										createUncompressedMediaType(48000, 2, 32, &lDownStreamMediaType);
 
-									createUncompressedMediaType(96000, 2, 32, &lDownStreamMediaType);
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
 
-									lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, NULL);
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
 
-									if (lresult == S_OK)
-										break;
-								}
+										createUncompressedMediaType(96000, 2, 32, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+
+									// 16 bits
+
+
+									{
+										lDownStreamMediaType.Release();
+
+										createUncompressedMediaType(16000, 2, 16, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
+
+										createUncompressedMediaType(32000, 2, 16, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
+
+										createUncompressedMediaType(44100, 2, 16, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
+
+										createUncompressedMediaType(48000, 2, 16, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+									{
+										lDownStreamMediaType.Release();
+
+										createUncompressedMediaType(96000, 2, 16, &lDownStreamMediaType);
+
+										lresult = lMediaTypeHandler->IsMediaTypeSupported(lDownStreamMediaType, &lTempDownStreamMediaType);
+
+										if (lresult == S_OK)
+											break;
+									}
+
+								} while (false);
 							}
 
 						} while (false);

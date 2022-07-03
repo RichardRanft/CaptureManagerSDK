@@ -253,7 +253,7 @@ typedef enum _DXGI_FORMAT
 			}\
 
 #else
-#define LOG_INVOKE_MF_METHOD(Function, Object, ...) lresult = Object->Function(__VA_ARGS__);\
+#define LOG_INVOKE_MF_METHOD(Function, ...) lresult = MediaFoundation::MediaFoundationManager::Function(__VA_ARGS__);\
 	if (FAILED(lresult))break;\
 
 #endif

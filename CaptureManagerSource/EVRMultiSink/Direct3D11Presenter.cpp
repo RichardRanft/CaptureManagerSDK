@@ -1,4 +1,4 @@
-/*
+﻿/*
 MIT License
 
 Copyright(c) 2020 Evgeny Pereguda
@@ -23,6 +23,9 @@ SOFTWARE.
 */
 
 #include "Direct3D11Presenter.h"
+#include "../DirectXManager/DXGIManager.h"
+#include "../DirectXManager/Direct3D9Manager.h"
+#include "../DirectXManager/Direct3D9ExManager.h"
 #include "../DirectXManager/Direct3D11Manager.h"
 #include "../MediaFoundationManager/MediaFoundationManager.h"
 #include "../LogPrintOut/LogPrintOut.h"
@@ -43,6 +46,8 @@ namespace EVRMultiSink
 			{
 				using namespace CaptureManager;
 				using namespace CaptureManager::Core;
+				using namespace Core::DXGI;
+				using namespace Core::Direct3D9;
 				using namespace Core::Direct3D11;
 				
 
@@ -57,7 +62,7 @@ namespace EVRMultiSink
 				D3D_FEATURE_LEVEL gFeatureLevels[] =
 				{
 					D3D_FEATURE_LEVEL_11_1,
-					//D3D_FEATURE_LEVEL_11_0
+					D3D_FEATURE_LEVEL_11_0
 					//D3D_FEATURE_LEVEL_10_1,
 					//D3D_FEATURE_LEVEL_10_0,
 					//D3D_FEATURE_LEVEL_9_1
@@ -92,9 +97,72 @@ namespace EVRMultiSink
 					do
 					{
 
-						LOG_CHECK_PTR_MEMORY(mDeviceManager);
+						LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 
 						LOG_CHECK_PTR_MEMORY(mD3D11Device);
+
+						CComQIPtrCustom<IDirect3DSurface9> lDirect3DSurface9 = aPtrTarget;
+
+						if (lDirect3DSurface9) {
+
+							D3DSURFACE_DESC lDesc;
+
+							LOG_INVOKE_POINTER_METHOD(lDirect3DSurface9, GetDesc, &lDesc);
+
+							LOG_CHECK_STATE(lDesc.Usage != D3DUSAGE_RENDERTARGET);
+
+							mDevice9.Release();
+
+							LOG_INVOKE_POINTER_METHOD(lDirect3DSurface9, GetDevice, &mDevice9);
+
+							LOG_CHECK_PTR_MEMORY(mDevice9);
+
+
+							HANDLE lSharedHandle = NULL;
+
+							mRenderDirect3DSurface9.Release();
+
+							LOG_INVOKE_POINTER_METHOD(mDevice9, CreateRenderTarget,
+								lDesc.Width,
+								lDesc.Height,
+								lDesc.Format,
+								D3DMULTISAMPLE_NONE,
+								0,
+								0,
+								&mRenderDirect3DSurface9,
+								&lSharedHandle);
+
+							LOG_CHECK_PTR_MEMORY(mRenderDirect3DSurface9);
+
+							mTargetDirect3DSurface9 = lDirect3DSurface9;
+
+							mID3D11Texture2D.Release();
+
+							CComPtrCustom<ID3D11Resource> lID3D11Resource;
+
+							mD3D11Device->OpenSharedResource(lSharedHandle, IID_PPV_ARGS(&lID3D11Resource));
+
+							LOG_CHECK_PTR_MEMORY(lID3D11Resource);
+
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(lID3D11Resource, &mID3D11Texture2D);
+
+							LOG_CHECK_PTR_MEMORY(mID3D11Texture2D);
+
+							LOG_INVOKE_POINTER_METHOD(mDevice9, StretchRect,
+								mRenderDirect3DSurface9,
+								NULL,
+								mTargetDirect3DSurface9,
+								NULL,
+								D3DTEXTUREFILTERTYPE::D3DTEXF_NONE);
+
+							LOG_INVOKE_FUNCTION(createSample, Direct3D11Presenter::RenderTexture);
+
+							mImmediateContext.Release();
+
+							mD3D11Device->GetImmediateContext(&mImmediateContext);
+
+							break;
+						}
 
 						CComQIPtrCustom<ISwapChainPanelNative> lSwapChainPanelNative = aPtrTarget;
 
@@ -175,9 +243,9 @@ namespace EVRMultiSink
 
 							LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
 
-							LOG_CHECK_PTR_MEMORY(mDeviceManager);
+							LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 
-							LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+							LOG_INVOKE_POINTER_METHOD(mMFDXGIDeviceManager, ResetDevice,
 								mD3D11Device,
 								mDeviceResetToken);
 
@@ -227,9 +295,9 @@ namespace EVRMultiSink
 
 							LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
 
-							LOG_CHECK_PTR_MEMORY(mDeviceManager);
+							LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 
-							LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+							LOG_INVOKE_POINTER_METHOD(mMFDXGIDeviceManager, ResetDevice,
 								mD3D11Device,
 								mDeviceResetToken);
 
@@ -288,9 +356,9 @@ namespace EVRMultiSink
 
 							LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
 
-							LOG_CHECK_PTR_MEMORY(mDeviceManager);
+							LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 
-							LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+							LOG_INVOKE_POINTER_METHOD(mMFDXGIDeviceManager, ResetDevice,
 								mD3D11Device,
 								mDeviceResetToken);
 
@@ -359,36 +427,65 @@ namespace EVRMultiSink
 						{
 							if (aRefIID == __uuidof(IMFDXGIDeviceManager))
 							{
-								if (mDeviceManager)
+								lresult = E_NOINTERFACE;
+							}
+							else if (aRefIID == __uuidof(IDirect3DDeviceManager9))
+							{
+								CComPtrCustom<IDirect3DDeviceManager9> lDeviceManager9;
+
+								LOG_INVOKE_FUNCTION(createDirectX9ManagerAndDevice, &lDeviceManager9);
+
+								LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(lDeviceManager9, aRefIID, aPtrPtrObject)
+							}
+						}
+						else if (aRefGUIDService == CM_VIDEO_ACCELERATION_SERVICE) {
+							if (aRefIID == __uuidof(IMFDXGIDeviceManager))
+							{
+								LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(mMFDXGIDeviceManager,
+									__uuidof(IUnknown),
+									aPtrPtrObject);
+							}
+							else if (aRefIID == __uuidof(IMFVideoSampleAllocator))
+							{
+								do
 								{
-									LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(mDeviceManager,
-										__uuidof(IUnknown),
-										aPtrPtrObject);
-								}
-								else
-								{
-									lresult = E_NOINTERFACE;
-								}
+
+									CComPtrCustom<IMFVideoSampleAllocator> lVideoSampleAllocator;
+
+									LOG_INVOKE_MF_FUNCTION(MFCreateVideoSampleAllocator,
+										IID_PPV_ARGS(&lVideoSampleAllocator));
+
+									if (lVideoSampleAllocator)
+									{
+										LOG_INVOKE_POINTER_METHOD(lVideoSampleAllocator, SetDirectXManager, mMFDXGIDeviceManager);
+
+										LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(lVideoSampleAllocator, aRefIID, aPtrPtrObject);
+									}
+
+								} while (false);
 							}
 							else if (aRefIID == __uuidof(IMFVideoSampleAllocatorEx))
 							{
 								do
 								{
 
-									CComPtrCustom<IMFVideoSampleAllocatorEx> lVideoSampleAllocatorEx;
+									CComPtrCustom<IMFVideoSampleAllocatorEx> lVideoSampleAllocator;
 
 									LOG_INVOKE_MF_FUNCTION(MFCreateVideoSampleAllocatorEx,
-										IID_PPV_ARGS(&lVideoSampleAllocatorEx));
+										IID_PPV_ARGS(&lVideoSampleAllocator));
 
-									if (lVideoSampleAllocatorEx)
+									if (lVideoSampleAllocator)
 									{
-										if (mDeviceManager)
-											lVideoSampleAllocatorEx->SetDirectXManager(mDeviceManager);
+										LOG_INVOKE_POINTER_METHOD(lVideoSampleAllocator, SetDirectXManager, mMFDXGIDeviceManager);
 
-										LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(lVideoSampleAllocatorEx, aRefIID, aPtrPtrObject);
+										LOG_INVOKE_WIDE_QUERY_INTERFACE_METHOD(lVideoSampleAllocator, aRefIID, aPtrPtrObject);
 									}
 
 								} while (false);
+							}
+							else
+							{
+								lresult = E_NOINTERFACE;
 							}
 						}
 
@@ -403,23 +500,80 @@ namespace EVRMultiSink
 
 					do
 					{
+						LOG_INVOKE_FUNCTION(Singleton<DXGIManager>::getInstance().getState);
+
+						CComPtrCustom<IDXGIFactory1> lFactory;
+						CComPtrCustom<IDXGIAdapter> dxgiAdapter;
+						CComPtrCustom<ID3D11DeviceContext> cp_d3dContext;
+
+						LOG_INVOKE_DXGI_FUNCTION(CreateDXGIFactory1,
+							IID_PPV_ARGS(&lFactory));
+
+						LOG_CHECK_PTR_MEMORY(lFactory);
+
+						CComPtrCustom<IDXGIFactory2> lDxgiAdapter1;
+
+						LOG_INVOKE_QUERY_INTERFACE_METHOD(lFactory, &lDxgiAdapter1);
+
+
 						LOG_CHECK_PTR_MEMORY(aPtrPtrDevice);
 
 						LOG_INVOKE_FUNCTION(Singleton<Direct3D11Manager>::getInstance().getState);
-						
-						D3D_FEATURE_LEVEL lfeatureLevel;
 
-						LOG_INVOKE_DX11_FUNCTION(D3D11CreateDevice,
-							NULL,
-							D3D_DRIVER_TYPE_HARDWARE,
-							NULL,
-							mUseDebugLayer,
-							gFeatureLevels,
-							gNumFeatureLevels,
-							D3D11_SDK_VERSION,
-							aPtrPtrDevice,
-							&lfeatureLevel,
-							NULL);
+						CComPtrCustom<ID3D11Device> cp_d3dDevice = nullptr;
+						UINT i_adapter = 0;
+						while (cp_d3dDevice == nullptr)
+						{
+							lresult = lDxgiAdapter1->EnumAdapters(i_adapter++, &dxgiAdapter);
+							if (FAILED(lresult))
+							{
+								if (mUseDebugLayer & D3D11_CREATE_DEVICE_VIDEO_SUPPORT)
+								{
+									/* try again without this flag */
+									i_adapter = 0;
+									mUseDebugLayer &= ~D3D11_CREATE_DEVICE_VIDEO_SUPPORT;
+									continue; //Try again with the new flags
+								}
+								else
+									break; /* no more flags to remove */
+							}
+
+							lresult = Direct3D11::Direct3D11Manager::D3D11CreateDevice(
+								dxgiAdapter.get(),
+								D3D_DRIVER_TYPE_UNKNOWN,
+								nullptr,
+								mUseDebugLayer,
+								NULL,
+								0,
+								D3D11_SDK_VERSION,
+								&cp_d3dDevice,
+								nullptr,
+								&cp_d3dContext
+							);
+
+							if (FAILED(lresult))
+								cp_d3dDevice = nullptr;
+						}
+
+						LOG_CHECK_PTR_MEMORY(cp_d3dDevice);
+
+						LOG_INVOKE_QUERY_INTERFACE_METHOD(cp_d3dDevice, aPtrPtrDevice);
+						
+						//D3D_FEATURE_LEVEL lfeatureLevel;
+
+						//LOG_INVOKE_DX11_FUNCTION(D3D11CreateDevice,
+						//	NULL,
+						//	D3D_DRIVER_TYPE_UNKNOWN,
+						//	//D3D_DRIVER_TYPE_HARDWARE,
+						//	NULL,
+						//	mUseDebugLayer,
+						//	NULL,
+						//	0,
+						//	D3D11_SDK_VERSION,
+						//	aPtrPtrDevice,
+						//	//&lfeatureLevel,
+						//	NULL,
+						//	NULL);
 
 						LOG_CHECK_PTR_MEMORY(aPtrPtrDevice);
 						
@@ -628,15 +782,15 @@ namespace EVRMultiSink
 						
 						LOG_CHECK_PTR_MEMORY(lDX11VideoDevice);
 
-						mDeviceManager.Release();
+						mMFDXGIDeviceManager.Release();
 												
 						LOG_INVOKE_MF_FUNCTION(MFCreateDXGIDeviceManager,
 							&mDeviceResetToken,
-							&mDeviceManager);
+							&mMFDXGIDeviceManager);
 						
-						LOG_CHECK_PTR_MEMORY(mDeviceManager);
+						LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 						
-						LOG_INVOKE_POINTER_METHOD(mDeviceManager, ResetDevice,
+						LOG_INVOKE_POINTER_METHOD(mMFDXGIDeviceManager, ResetDevice,
 							mD3D11Device,
 							mDeviceResetToken);
 
@@ -655,18 +809,9 @@ namespace EVRMultiSink
 
 						LOG_CHECK_PTR_MEMORY(mMixer);
 												
-						CComPtrCustom<IUnknown> lDeviceManager;
-						
-						LOG_INVOKE_POINTER_METHOD(this, GetService,
-							MR_VIDEO_ACCELERATION_SERVICE,
-							__uuidof(IMFDXGIDeviceManager),
-							(void**)&lDeviceManager);
-
-						LOG_CHECK_PTR_MEMORY(lDeviceManager);
-
 						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, 0);
 
-						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)lDeviceManager.get());
+						LOG_INVOKE_MF_METHOD(ProcessMessage, mMixer, MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)mMFDXGIDeviceManager.get());
 						
 						if (mCurrentMediaType)
 						{
@@ -708,7 +853,9 @@ namespace EVRMultiSink
 						//	mLastTime = lCurrentTime;
 						//}
 
-						std::lock_guard<std::mutex> lLock(mAccessMutex);
+						//std::lock_guard<std::mutex> lLock(mAccessMutex);
+
+						auto ltry_lock = mAccessMutex.try_lock();
 
 						MFT_OUTPUT_DATA_BUFFER lBuffer;
 
@@ -748,9 +895,23 @@ namespace EVRMultiSink
 							&lBuffer,
 							&lState);
 
-						LOG_CHECK_PTR_MEMORY(mSwapChain1);
+						if (mSwapChain1)
+							lresult = mSwapChain1->Present(0, 0);
+						else if (mImmediateContext)
+						{
+							mImmediateContext->Flush();
 
-						lresult = mSwapChain1->Present(0, 0);
+							if (mDevice9)
+								lresult = mDevice9->StretchRect(
+									mRenderDirect3DSurface9,
+									NULL,
+									mTargetDirect3DSurface9,
+									NULL,
+									D3DTEXTUREFILTERTYPE::D3DTEXF_NONE);
+						}																			
+
+						if (ltry_lock)
+							mAccessMutex.unlock();
 
 					} while (false);
 
@@ -777,7 +938,7 @@ namespace EVRMultiSink
 					do
 					{
 
-						LOG_CHECK_PTR_MEMORY(mDeviceManager);
+						LOG_CHECK_PTR_MEMORY(mMFDXGIDeviceManager);
 
 						LOG_CHECK_PTR_MEMORY(mD3D11Device);
 
@@ -866,6 +1027,87 @@ namespace EVRMultiSink
 						LOG_CHECK_PTR_MEMORY(mSwapChain1);
 
 						LOG_INVOKE_FUNCTION(createSample);
+
+					} while (false);
+
+					return lresult;
+				}
+
+				HRESULT Direct3D11Presenter::createDirectX9ManagerAndDevice(IDirect3DDeviceManager9** a_DeviceManager)
+				{
+					HRESULT lresult(E_FAIL);
+
+					UINT lAdapter = D3DADAPTER_DEFAULT;
+
+					D3DDISPLAYMODE dm;
+
+					D3DPRESENT_PARAMETERS pp;
+
+					do
+					{
+						LOG_CHECK_PTR_MEMORY(a_DeviceManager);
+
+						LOG_INVOKE_FUNCTION(Singleton<Direct3D9ExManager>::getInstance().getState);
+
+						CComPtrCustom<IDirect3DDevice9> lDevice9;
+
+						CComPtrCustom<IDirect3D9Ex> lD3D9;
+
+						UINT lDirectX9DeviceResetToken;
+
+						CComPtrCustom<IDirect3DDeviceManager9> lDirect3DDeviceManager;
+
+						LOG_INVOKE_DX9EX_FUNCTION(Direct3DCreate9Ex, D3D_SDK_VERSION, &lD3D9);
+
+						LOG_CHECK_PTR_MEMORY(lD3D9);
+
+						LOG_INVOKE_DX9_METHOD(GetAdapterDisplayMode,
+							lD3D9,
+							lAdapter,
+							&dm);
+
+						ZeroMemory(&pp, sizeof(pp));
+
+						pp.Windowed = TRUE;
+						pp.hDeviceWindow = GetDesktopWindow();
+						pp.SwapEffect = D3DSWAPEFFECT_COPY;
+						pp.BackBufferFormat = dm.Format;
+						pp.BackBufferWidth = 800,
+							pp.BackBufferHeight = 600;
+						pp.Flags =
+							D3DPRESENTFLAG_VIDEO
+							//| D3DPRESENTFLAG_DEVICECLIP
+							| D3DPRESENTFLAG_LOCKABLE_BACKBUFFER
+							;
+						pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+						pp.BackBufferCount = 1;
+
+						LOG_INVOKE_DX9_METHOD(CreateDevice,
+							lD3D9,
+							lAdapter,
+							D3DDEVTYPE_HAL,
+							GetDesktopWindow(),
+							//D3DCREATE_HARDWARE_VERTEXPROCESSING |
+							D3DCREATE_SOFTWARE_VERTEXPROCESSING |
+							D3DCREATE_NOWINDOWCHANGES |
+							D3DCREATE_MULTITHREADED |
+							D3DCREATE_FPU_PRESERVE,
+							&pp,
+							&lDevice9);
+
+						LOG_CHECK_PTR_MEMORY(lDevice9);
+
+						LOG_INVOKE_DX9_FUNCTION(DXVA2CreateDirect3DDeviceManager9,
+								&lDirectX9DeviceResetToken,
+								&lDirect3DDeviceManager);
+
+						LOG_CHECK_PTR_MEMORY(lDirect3DDeviceManager);
+
+						LOG_INVOKE_DX9_METHOD(ResetDevice, lDirect3DDeviceManager,
+							lDevice9,
+							lDirectX9DeviceResetToken);
+
+						LOG_INVOKE_QUERY_INTERFACE_METHOD(lDirect3DDeviceManager, a_DeviceManager);						
 
 					} while (false);
 

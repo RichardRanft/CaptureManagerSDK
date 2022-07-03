@@ -47,6 +47,8 @@ namespace CaptureManager
 
 			// CaptureInvoker implementation
 
+			virtual HRESULT STDMETHODCALLTYPE starting() override;
+
 			virtual HRESULT STDMETHODCALLTYPE invoke() override;
 
 
@@ -138,8 +140,6 @@ namespace CaptureManager
 			Sources::SourceState mState;
 
 			bool mReleaseAudioClientLock;
-
-			bool mFirstInvoke;
 
 			MFTIME mPrevTime;
 

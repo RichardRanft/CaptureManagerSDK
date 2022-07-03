@@ -43,12 +43,12 @@ namespace CaptureManager
 			using namespace Core;
 
 			AudioEndpointCaptureProcessor::AudioEndpointCaptureProcessor() :
-				CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
+				//CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
+				CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Audio"),
 				mAudioClient(nullptr),
 				mPtrAudioCaptureClient(nullptr),
 				mPtrMMDevice(nullptr),
-				mState(SourceState::SourceStateUninitialized),
-				mFirstInvoke(true),
+				mState(SourceState::SourceStateUninitialized),	
 				mDeltaTimeDuration(0),
 				mReleaseAudioClientLock(false),
 				mSampleDuration(400000),
@@ -65,6 +65,16 @@ namespace CaptureManager
 			
 			// CaptureInvoker implementation
 
+			HRESULT STDMETHODCALLTYPE AudioEndpointCaptureProcessor::starting()
+			{
+				mPrevTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+
+				mWaitArray[0] = { mShutdownEvent };
+				mWaitArray[1] = { mAudioSamplesReadyEvent };
+
+				return S_OK;
+			}
+
 			HRESULT STDMETHODCALLTYPE AudioEndpointCaptureProcessor::invoke()
 			{
 				HRESULT lresult(E_NOTIMPL);
@@ -76,16 +86,7 @@ namespace CaptureManager
 
 					if (mState != SourceState::SourceStateStarted)
 					{
-						lresult = S_OK;
-
-						break;
-					}
-
-					if (mFirstInvoke)
-					{
-						mPrevTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
-
-						mFirstInvoke = false;
+						Sleep(10);
 
 						lresult = S_OK;
 
@@ -94,10 +95,7 @@ namespace CaptureManager
 
 					if(mInvokeMode == INVOKEMODE::EVENT)
 					{
-
-						HANDLE lWaitArray[2] = { mShutdownEvent, mAudioSamplesReadyEvent };
-
-						DWORD lWaitResult = WaitForMultipleObjects(2, lWaitArray, FALSE, mSilenceDuration);
+						DWORD lWaitResult = WaitForMultipleObjects(2, mWaitArray, FALSE, mSilenceDuration);
 						switch (lWaitResult)
 						{
 						case WAIT_OBJECT_0 + 0:
@@ -266,10 +264,6 @@ namespace CaptureManager
 						}
 
 						Sleep(mMillTickTime);
-					}
-					else
-					{
-						Sleep(10);
 					}
 					
 					lresult = S_OK;
@@ -623,8 +617,6 @@ namespace CaptureManager
 						break;
 					}
 
-					mFirstInvoke = true;
-
 					mDeltaTimeDuration = 0;
 
 					mPrevSampleTime = 0;
@@ -665,6 +657,10 @@ namespace CaptureManager
 					LOG_INVOKE_POINTER_METHOD(mAudioClient, GetBufferSize, &lAudioClientBufferSampleSize);
 										
 					mBlockAlign = mCurrentAudioCaptureConfig.mPWAVEFORMATEX->nBlockAlign;
+
+					mSampleDuration = mCurrentAudioCaptureConfig.mDefaultDevicePeriod * 4;
+
+					mSilenceDuration = mSampleDuration / 10000;
 										
 					mExpectedBufferSize = (UINT32)((((LONGLONG)mCurrentAudioCaptureConfig.mPWAVEFORMATEX->nSamplesPerSec) * ((LONGLONG)mBlockAlign)* mSampleDuration) / 10000000LL);
 					
@@ -1085,19 +1081,6 @@ namespace CaptureManager
 						}
 
 					}
-
-					//if (lAudioCaptureConfig.mWAVEFORMATEX.wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
-					//{
-					//	lAudioCaptureConfig.mWAVEFORMATEX.wBitsPerSample >>= 1;
-
-					//	lAudioCaptureConfig.mWAVEFORMATEX.nBlockAlign >>= 1;
-
-					//	lAudioCaptureConfig.mWAVEFORMATEX.nAvgBytesPerSec >>= 1;
-
-					//	lAudioCaptureConfig.mWAVEFORMATEX.wFormatTag = WAVE_FORMAT_PCM;
-
-					//	lAudioCaptureConfig.mFloatToShort = TRUE;
-					//}
 										
 					aVectorAudioCaptureConfigs.push_back(lAudioCaptureConfig);
 
@@ -1137,6 +1120,8 @@ namespace CaptureManager
 						LOG_CHECK_STATE_DESCR(mShutdownEvent == NULL, E_NOT_VALID_STATE);
 
 						mAudioSamplesReadyEvent = CreateEventEx(NULL, NULL, 0, EVENT_MODIFY_STATE | SYNCHRONIZE);
+
+						LOG_CHECK_STATE_DESCR(mAudioSamplesReadyEvent == NULL, E_NOT_VALID_STATE);
 
 						LOG_INVOKE_POINTER_METHOD(mAudioClient, SetEventHandle, mAudioSamplesReadyEvent);
 

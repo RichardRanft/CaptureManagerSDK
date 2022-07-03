@@ -22,7 +22,7 @@
     <ProjectGuid>{0E389C4C-F3D0-4B94-A7D7-5205118682E3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CustomisedTeeNode</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -25,6 +25,7 @@ SOFTWARE.
 #include "Direct3D11VideoProcessor.h"
 #include "../MediaFoundationManager/MediaFoundationManager.h"
 #include "../Common/MFHeaders.h"
+#include "../Common/Constants.h"
 #include "../Common/Common.h"
 #include "../Common/GUIDs.h"
 #include "../LogPrintOut/LogPrintOut.h"
@@ -37,20 +38,6 @@ SOFTWARE.
 #include <list>
 #include <DXGI1_2.h>
 #include <D3d11.h>
-
-enum {
-	VENDOR_NVIDIA = 0x000010de,
-	VENDOR_INTEL = 0x00008086,   // Haha!
-	VENDOR_AMD = 0x00001002,
-	VENDOR_ARM = 0x000013B5,  // Mali
-	VENDOR_QUALCOMM = 0x00005143,
-	VENDOR_IMGTEC = 0x00001010,  // PowerVR
-	VENDOR_MICROSOFT_BASIC_RENDER_DRIVER = 0x00001414,
-};
-
-#ifndef AMD_BUG_FIX
-#define AMD_BUG_FIX true
-#endif // !AMD_BUG_FIX
 
 
 namespace CaptureManager
@@ -66,25 +53,25 @@ namespace CaptureManager
 				GUID const* const g_pVideoFormats[] =
 				{
 					&MFVideoFormat_NV12,
-					&MFVideoFormat_IYUV,
 					&MFVideoFormat_YUY2,
+					&MFVideoFormat_IYUV,
 					&MFVideoFormat_YV12,
 					&MFVideoFormat_ABGR32,
 					&MFVideoFormat_ARGB32,
 					&MFVideoFormat_RGB32,
-					&MFVideoFormat_RGB24,
-					&MFVideoFormat_RGB555,
-					&MFVideoFormat_RGB565,
-					&MFVideoFormat_RGB8,
-					&MFVideoFormat_AYUV,
-					&MFVideoFormat_UYVY,
-					&MFVideoFormat_YVYU,
-					&MFVideoFormat_YVU9,
-					&MEDIASUBTYPE_V216,
-					&MFVideoFormat_v410,
-					&MFVideoFormat_I420,
-					&MFVideoFormat_NV11,
-					&MFVideoFormat_420O
+					//&MFVideoFormat_RGB24,
+					//&MFVideoFormat_RGB555,
+					//&MFVideoFormat_RGB565,
+					//&MFVideoFormat_RGB8,
+					//&MFVideoFormat_AYUV,
+					//&MFVideoFormat_UYVY,
+					//&MFVideoFormat_YVYU,
+					//&MFVideoFormat_YVU9,
+					//&MEDIASUBTYPE_V216,
+					//&MFVideoFormat_v410,
+					//&MFVideoFormat_I420,
+					//&MFVideoFormat_NV11,
+					//&MFVideoFormat_420O
 				};
 
 				const Direct3D11VideoProcessor::FormatEntry Direct3D11VideoProcessor::mDXGIFormatMapping[] =
@@ -1190,44 +1177,12 @@ namespace CaptureManager
 						}
 
 						LOG_CHECK_STATE_DESCR(lDxgiFormat == DXGI_FORMAT::DXGI_FORMAT_UNKNOWN, MF_E_INVALIDMEDIATYPE);
-
-						if (lDxgiFormat == DXGI_FORMAT_YUY2 || lDxgiFormat == DXGI_FORMAT_AYUV && AMD_BUG_FIX)
-						{
-							CComPtrCustom<ID3D11Device> lDevice;
-
-							LOG_INVOKE_FUNCTION(getVideoProcessorService,
-								mDeviceManager,
-								&lDevice);
-
-							LOG_CHECK_PTR_MEMORY(lDevice);
-
-							CComPtrCustom<IDXGIDevice> lIDXGIDevice;
-
-							LOG_INVOKE_QUERY_INTERFACE_METHOD(lDevice, &lIDXGIDevice);
-
-							LOG_CHECK_PTR_MEMORY(lIDXGIDevice);
-
-							CComPtrCustom<IDXGIAdapter> lIDXGIAdapter;
-
-							LOG_INVOKE_POINTER_METHOD(lIDXGIDevice, GetAdapter, &lIDXGIAdapter);
-
-							LOG_CHECK_PTR_MEMORY(lIDXGIAdapter);
-
-							DXGI_ADAPTER_DESC desc;
-
-							LOG_INVOKE_POINTER_METHOD(lIDXGIAdapter, GetDesc, &desc);
-
-							LOG_CHECK_STATE_DESCR(desc.VendorId == VENDOR_AMD, MF_E_INVALIDMEDIATYPE);
-						}
-						
+												
 						CComPtrCustom<ID3D11VideoDevice> lVideoDevice;
 
 						LOG_INVOKE_FUNCTION(getVideoProcessorService,
 							mDeviceManager,
 							&lVideoDevice);
-
-
-
 
 						UINT32 lInputWidth = 0;
 
@@ -1857,6 +1812,8 @@ namespace CaptureManager
 
 						bool lIsReady = false;
 
+						std::vector<D3D11_VIDEO_PROCESSOR_STREAM> lInputStreams;
+
 						for (auto& lIndexID : mdwZOrders)
 						{
 							auto& lInputStream = mInputStreams[lStreamIndex];
@@ -2047,23 +2004,25 @@ namespace CaptureManager
 								}
 								else
 								{
-									auto lprop = (float)lScaledWidthDest / (float)lInputDesc.Width;
+									//auto lprop = (float)lScaledWidthDest / (float)lInputDesc.Width;
 
-									float lh = 1.0f;// lInputDesc.Height / (float)lDestDesc.Height;
+									//float lh = lInputDesc.Height / (float)lDestDesc.Height;
 
-									auto lidealHeight = lprop * (float)lInputDesc.Height;
+									//auto lidealHeight = lprop * (float)lInputDesc.Height;
 
-									auto lborder = (float)(lDestDesc.Height - lidealHeight) * 0.5f;
+									//auto lborder = (float)(lDestDesc.Height - lidealHeight) * 0.5f;
 
-									lSubStreamDestRect.top = (LONG)(lTopOffset + lborder * lh);
+									lSubStreamDestRect.top = (LONG)(lTopOffset);
 
-									lSubStreamDestRect.bottom = (LONG)(lTopOffset + lidealHeight * lh + lborder * lh);
+									lSubStreamDestRect.bottom = (LONG)(lTopOffset + lScaledHeightDest);
 
 									lSubStreamDestRect.left = (LONG)(lLeftOffset);
 
 									lSubStreamDestRect.right = (LONG)(lLeftOffset + lScaledWidthDest);
 								}
 							}
+
+							lCurrentStreamIndex = lInputStreams.size();
 
 							lVideoContext->VideoProcessorSetStreamSourceRect(
 								mVideoProcessor,
@@ -2078,19 +2037,22 @@ namespace CaptureManager
 								&lSubStreamDestRect
 							);
 
+							lInputStreams.push_back(lInputStream);
+
 						}
 
 						if (lIsReady)
 						{
-							lresult = lVideoContext->VideoProcessorBlt(
-								mVideoProcessor,
-								lOutputView,
-								0,
-								mInputStreams.size(),
-								mInputStreams.data());
+							if (!lInputStreams.empty())
+								lresult = lVideoContext->VideoProcessorBlt(
+									mVideoProcessor,
+									lOutputView,
+									0,
+									lInputStreams.size(),
+									lInputStreams.data());
 						}
 
-						for (auto& lInputStream : mInputStreams)
+						for (auto& lInputStream : lInputStreams)
 						{
 							if (lInputStream.pInputSurface != nullptr)
 								lInputStream.pInputSurface->Release();

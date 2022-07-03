@@ -461,70 +461,150 @@ namespace CaptureManager
 
 				LOG_CHECK_PTR_MEMORY(pVarResult);
 
-				LOG_CHECK_STATE_DESCR(pDispParams->cArgs != 5, DISP_E_BADPARAMCOUNT);
-
-
-				CComPtrCustom<IUnknown> lUnkEVROutputNode;
-
-		
-				FLOAT lLeft = 0.0f;
-				FLOAT lRight = 1.0f;
-				FLOAT lTop = 0.0f;
-				FLOAT lBottom = 1.0f;
-
-				VARIANT lFifthArg = pDispParams->rgvarg[0];
-
-				VARIANT lFouthArg = pDispParams->rgvarg[1];
-
-				VARIANT lThirdArg = pDispParams->rgvarg[2];
-
-				VARIANT lSecondArg = pDispParams->rgvarg[3];
-
-				VARIANT lFirstArg = pDispParams->rgvarg[4];
-
-
-				if (lFirstArg.vt == VT_UNKNOWN && lFirstArg.punkVal != nullptr)
+				switch (pDispParams->cArgs)
 				{
-					lFirstArg.punkVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+				case 5:
+				{
+
+					CComPtrCustom<IUnknown> lUnkEVROutputNode;
+
+
+					FLOAT lLeft = 0.0f;
+					FLOAT lRight = 1.0f;
+					FLOAT lTop = 0.0f;
+					FLOAT lBottom = 1.0f;
+
+					VARIANT lFifthArg = pDispParams->rgvarg[0];
+
+					VARIANT lFouthArg = pDispParams->rgvarg[1];
+
+					VARIANT lThirdArg = pDispParams->rgvarg[2];
+
+					VARIANT lSecondArg = pDispParams->rgvarg[3];
+
+					VARIANT lFirstArg = pDispParams->rgvarg[4];
+
+
+					if (lFirstArg.vt == VT_UNKNOWN && lFirstArg.punkVal != nullptr)
+					{
+						lFirstArg.punkVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+					}
+					else if (lFirstArg.vt == VT_DISPATCH && lFirstArg.pdispVal != nullptr)
+					{
+						lFirstArg.pdispVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+					}
+					else
+					{
+						lresult = DISP_E_BADVARTYPE;
+
+						break;
+					}
+
+
+					if (lSecondArg.vt == VT_R4)
+					{
+						lLeft = lSecondArg.fltVal;
+					}
+
+					if (lThirdArg.vt == VT_R4)
+					{
+						lRight = lThirdArg.fltVal;
+					}
+
+					if (lFouthArg.vt == VT_R4)
+					{
+						lTop = lFouthArg.fltVal;
+					}
+
+					if (lFifthArg.vt == VT_R4)
+					{
+						lBottom = lFifthArg.fltVal;
+					}
+
+					LOG_INVOKE_FUNCTION(setPosition,
+						lUnkEVROutputNode,
+						lLeft,
+						lRight,
+						lTop,
+						lBottom);
 				}
-				else if (lFirstArg.vt == VT_DISPATCH && lFirstArg.pdispVal != nullptr)
+					break;
+				case 6:
 				{
-					lFirstArg.pdispVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
-				}
-				else
-				{
-					lresult = DISP_E_BADVARTYPE;
 
+					CComPtrCustom<IUnknown> lUnkEVROutputNode;
+
+
+					FLOAT lLeft = 0.0f;
+					FLOAT lRight = 1.0f;
+					FLOAT lTop = 0.0f;
+					FLOAT lBottom = 1.0f;
+
+					VARIANT lFifthArg = pDispParams->rgvarg[0];
+
+					VARIANT lFouthArg = pDispParams->rgvarg[1];
+
+					VARIANT lThirdArg = pDispParams->rgvarg[2];
+
+					VARIANT lSecondArg = pDispParams->rgvarg[3];
+
+					VARIANT lFirstArg = pDispParams->rgvarg[4];
+
+					VARIANT lZeroArg = pDispParams->rgvarg[5];
+
+
+					if (lFirstArg.vt == VT_I8 && lFirstArg.punkVal != nullptr)
+					{
+						lFirstArg.punkVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+					}
+					else if (lFirstArg.vt == VT_UNKNOWN && lFirstArg.punkVal != nullptr)
+					{
+						lFirstArg.punkVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+					}
+					else if (lFirstArg.vt == VT_DISPATCH && lFirstArg.pdispVal != nullptr)
+					{
+						lFirstArg.pdispVal->QueryInterface(IID_PPV_ARGS(&lUnkEVROutputNode));
+					}
+					else
+					{
+						lresult = DISP_E_BADVARTYPE;
+
+						break;
+					}
+
+
+					if (lSecondArg.vt == VT_R4)
+					{
+						lLeft = lSecondArg.fltVal;
+					}
+
+					if (lThirdArg.vt == VT_R4)
+					{
+						lRight = lThirdArg.fltVal;
+					}
+
+					if (lFouthArg.vt == VT_R4)
+					{
+						lTop = lFouthArg.fltVal;
+					}
+
+					if (lFifthArg.vt == VT_R4)
+					{
+						lBottom = lFifthArg.fltVal;
+					}
+
+					LOG_INVOKE_FUNCTION(setPosition,
+						lUnkEVROutputNode,
+						lLeft,
+						lRight,
+						lTop,
+						lBottom);
+				}
+				break;
+				default:
+					LOG_CHECK_STATE_DESCR(true, DISP_E_BADPARAMCOUNT);
 					break;
 				}
-
-
-				if (lSecondArg.vt == VT_R4)
-				{
-					lLeft = lSecondArg.fltVal;
-				}
-
-				if (lThirdArg.vt == VT_R4)
-				{
-					lRight = lThirdArg.fltVal;
-				}
-
-				if (lFouthArg.vt == VT_R4)
-				{
-					lTop = lFouthArg.fltVal;
-				}
-
-				if (lFifthArg.vt == VT_R4)
-				{
-					lBottom = lFifthArg.fltVal;
-				}
-				
-				LOG_INVOKE_FUNCTION(setPosition,
-					lUnkEVROutputNode,
-					lLeft,
-					lRight,
-					lTop,
-					lBottom);
 				
 			} while (false);
 

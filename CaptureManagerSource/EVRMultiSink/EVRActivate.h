@@ -716,13 +716,15 @@ namespace EVRMultiSink
 							aTop,
 							aBottom);
 
+						if (mUnkVideoRenderingClass)
+						{
+							CComPtrCustom<IPresenter> lPresenter;
 
-						CComPtrCustom<IPresenter> lPresenter;
+							LOG_INVOKE_QUERY_INTERFACE_METHOD(mPresenter, &lPresenter);
 
-						LOG_INVOKE_QUERY_INTERFACE_METHOD(mPresenter, &lPresenter);
-
-						if (lPresenter)
-							lPresenter->ProcessFrame(FALSE);
+							if (lPresenter)
+								lPresenter->ProcessFrame(FALSE);
+						}
 
 					} while (false);
 

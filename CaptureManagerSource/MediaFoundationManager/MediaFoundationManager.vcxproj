@@ -22,7 +22,7 @@
     <ProjectGuid>{9983FF0E-2D0C-4258-8469-740268DFBED4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>MediaFoundationManager</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

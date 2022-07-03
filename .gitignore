@@ -4,6 +4,6 @@ packages/
 *.asf
 Log.txt
 CaptureManagerLibrary.dll
-Bin/
 Release/
 CaptureManagerSDK*
+/Bin/

@@ -26,6 +26,7 @@ SOFTWARE.
 #include "../MediaFoundationManager/MediaFoundationManager.h"
 #include "../Common/MFHeaders.h"
 #include "../Common/Common.h"
+#include "../Common/Constants.h"
 #include "../Common/Singleton.h"
 #include "../LogPrintOut/LogPrintOut.h"
 #include "../DirectXManager/Direct3D9Manager.h"
@@ -1662,7 +1663,8 @@ namespace CaptureManager
 						
 						lDirect3D9->GetAdapterIdentifier(lD3DCAPS9.AdapterOrdinal, 0, &lD3DADAPTER_IDENTIFIER9);
 
-						if (lD3DADAPTER_IDENTIFIER9.VendorId == 0x10DE)
+						if (lD3DADAPTER_IDENTIFIER9.VendorId == VENDOR_NVIDIA 
+							|| lD3DADAPTER_IDENTIFIER9.VendorId == VENDOR_AMD)
 							lOnlySoftware = TRUE;
 
 					} while (false);
@@ -1981,7 +1983,7 @@ namespace CaptureManager
 						if (mMainVideoDesc.Format == pDesc->Format)
 							return TRUE;
 
-						return pDesc->Format == (D3DFORMAT)MAKEFOURCC('N', 'V', '1', '2');
+						return pDesc->Format == D3DFMT_NV12;
 					}
 
 					for (i = 0; i < count; i++)
@@ -2028,6 +2030,7 @@ namespace CaptureManager
 					{
 						return FALSE;
 					}
+
 
 					//
 					// Check to see if the device supports all the VP operations we want.

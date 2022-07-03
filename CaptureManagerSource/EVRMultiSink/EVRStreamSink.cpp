@@ -25,19 +25,6 @@ SOFTWARE.
 #include "EVRStreamSink.h"
 #include "../MediaFoundationManager/MediaFoundationManager.h"
 
-
-
-void OutputLog(const char *szFormat, ...)
-{
-	char szBuff[1024];
-	va_list arg;
-	va_start(arg, szFormat);
-	_vsnprintf_s(szBuff, sizeof(szBuff), sizeof(szBuff), szFormat, arg);
-	va_end(arg);
-
-	OutputDebugStringA(szBuff);
-}
-
 namespace EVRMultiSink
 {
 	namespace Sinks
@@ -107,9 +94,15 @@ namespace EVRMultiSink
 					LOG_INVOKE_MF_FUNCTION(MFCreateEventQueue,
 						&mEventQueue);
 
+					//LOG_INVOKE_MF_FUNCTION(MFAllocateWorkQueueEx,
+					//	_MF_STANDARD_WORKQUEUE,
+					//	&mWorkQueueId);
+
 					LOG_INVOKE_MF_FUNCTION(MFAllocateWorkQueueEx,
-						_MF_STANDARD_WORKQUEUE,
+						_MF_MULTITHREADED_WORKQUEUE,
 						&mWorkQueueId);
+
+					
 
 
 					
@@ -348,7 +341,7 @@ namespace EVRMultiSink
 							&EVRStreamSink::update));
 
 						LOG_INVOKE_POINTER_METHOD(mScheduler, init,
-							mVideoFrameDuration/2);
+							mVideoFrameDuration/4);
 					}
 
 					if (mStreamState != Started)
@@ -496,9 +489,6 @@ namespace EVRMultiSink
 				{
 					LOG_CHECK_PTR_MEMORY(aPtrMediaType);
 
-					if (aPtrPtrMediaType != nullptr)
-						*aPtrPtrMediaType = nullptr;
-
 					std::lock_guard<std::mutex> lLock(mAccessMutex);
 
 					LOG_INVOKE_FUNCTION(checkShutdown);
@@ -538,7 +528,7 @@ namespace EVRMultiSink
 						mMixerStreamID,
 						aPtrMediaType,
 						0);
-										
+																														
 				} while (false);
 
 				return lresult;
@@ -557,7 +547,17 @@ namespace EVRMultiSink
 
 					LOG_INVOKE_FUNCTION(checkShutdown);
 
-					if (mCurrentMediaType)
+					CComPtrCustom<IMFMediaType> lCurrentMediaType;
+
+					if (mMixer)
+					{
+						LOG_INVOKE_POINTER_METHOD(mMixer, 
+							GetInputCurrentType,
+							mMixerStreamID,
+							&lCurrentMediaType);
+					}
+
+					if (lCurrentMediaType)
 						*aPtrTypeCount = 1;
 					else
 						*aPtrTypeCount = 0;
@@ -581,9 +581,11 @@ namespace EVRMultiSink
 
 					LOG_INVOKE_FUNCTION(checkShutdown);
 
-					if (mCurrentMediaType && aIndex == 0)
+					if (mMixer && aIndex == 0)
 					{
-						LOG_INVOKE_QUERY_INTERFACE_METHOD(mCurrentMediaType, aPtrPtrType);
+						LOG_INVOKE_POINTER_METHOD(mMixer, GetInputCurrentType,
+							mMixerStreamID,
+							aPtrPtrType);
 					}
 					else
 					{
@@ -637,14 +639,13 @@ namespace EVRMultiSink
 						aPtrMediaType,
 						0);
 
-					mCurrentMediaType = aPtrMediaType;	
 
 
 
 					MFRatio lframeRate;
 
 					LOG_INVOKE_FUNCTION(MFGetAttributeRatio,
-						mCurrentMediaType,
+						aPtrMediaType,
 						MF_MT_FRAME_RATE,
 						(UINT32*)&lframeRate.Numerator,
 						(UINT32*)&lframeRate.Denominator);
@@ -657,13 +658,6 @@ namespace EVRMultiSink
 						&lVideoFrameDuration);
 
 					mVideoFrameDuration = lVideoFrameDuration;
-
-
-
-					//LogPrintOut::getInstance().printOutln(
-					//	LogPrintOut::INFO_LEVEL,
-					//	L"mVideoFrameDuration: ",
-					//	mVideoFrameDuration);
 										
 				} while (false);
 
@@ -683,9 +677,11 @@ namespace EVRMultiSink
 
 					LOG_INVOKE_FUNCTION(checkShutdown);
 
-					if (mCurrentMediaType)
+					if (mMixer)
 					{
-						LOG_INVOKE_QUERY_INTERFACE_METHOD(mCurrentMediaType, aPtrPtrMediaType);
+						LOG_INVOKE_POINTER_METHOD(mMixer, GetInputCurrentType,
+							mMixerStreamID,
+							aPtrPtrMediaType);
 					}
 					else
 					{
@@ -1146,6 +1142,120 @@ namespace EVRMultiSink
 						GUID_NULL,
 						S_OK,
 						NULL);
+
+				} while (false);
+
+				return lresult;
+			}
+
+			HRESULT EVRStreamSink::createMediaType(
+				IMFMediaType* aPtrUpStreamMediaType,
+				GUID aMFVideoFormat,
+				IMFMediaType** aPtrPtrMediaSinkMediaType)
+			{
+				HRESULT lresult;
+
+				do
+				{
+					LOG_CHECK_PTR_MEMORY(aPtrUpStreamMediaType);
+
+					LOG_CHECK_PTR_MEMORY(aPtrPtrMediaSinkMediaType);
+
+					CComPtrCustom<IMFMediaType> lnewMediaType;
+
+					LOG_INVOKE_MF_FUNCTION(MFCreateMediaType,
+						&lnewMediaType);
+
+					LOG_CHECK_PTR_MEMORY(lnewMediaType);
+
+					LOG_INVOKE_MF_METHOD(SetGUID,
+						lnewMediaType,
+						MF_MT_MAJOR_TYPE,
+						MFMediaType_Video);
+
+					LOG_INVOKE_MF_METHOD(SetGUID,
+						lnewMediaType,
+						MF_MT_SUBTYPE,
+						aMFVideoFormat);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lnewMediaType,
+						MF_MT_INTERLACE_MODE,
+						MFVideoInterlace_Progressive);
+
+					LOG_INVOKE_MF_METHOD(SetUINT32,
+						lnewMediaType,
+						MF_MT_ALL_SAMPLES_INDEPENDENT,
+						TRUE);
+
+					PROPVARIANT lVarItem;
+
+					LOG_INVOKE_MF_METHOD(GetItem,
+						aPtrUpStreamMediaType,
+						MF_MT_FRAME_SIZE,
+						&lVarItem);
+
+					if (aMFVideoFormat == MFVideoFormat_NV12)
+					{
+						lVarItem.hVal.HighPart = (lVarItem.hVal.HighPart >> 1) << 1;
+
+						lVarItem.hVal.LowPart = (lVarItem.hVal.LowPart >> 1) << 1;
+					}
+
+					LOG_INVOKE_MF_METHOD(SetItem,
+						lnewMediaType,
+						MF_MT_FRAME_SIZE,
+						lVarItem);
+
+					LOG_INVOKE_MF_METHOD(GetItem,
+						aPtrUpStreamMediaType,
+						MF_MT_FRAME_RATE,
+						&lVarItem);
+
+					LOG_INVOKE_MF_METHOD(SetItem,
+						lnewMediaType,
+						MF_MT_FRAME_RATE,
+						lVarItem);
+
+					LOG_INVOKE_MF_METHOD(GetItem,
+						aPtrUpStreamMediaType,
+						MF_MT_PIXEL_ASPECT_RATIO,
+						&lVarItem);
+
+					LOG_INVOKE_MF_METHOD(SetItem,
+						lnewMediaType,
+						MF_MT_PIXEL_ASPECT_RATIO,
+						lVarItem);
+
+					UINT32 lWidthInPixels = 0;
+
+					UINT32 lHeightInPixels = 0;
+
+					LOG_INVOKE_FUNCTION(MediaFoundation::MediaFoundationManager::GetAttributeSize,
+						lnewMediaType,
+						MF_MT_FRAME_SIZE,
+						lWidthInPixels,
+						lHeightInPixels);
+
+					do
+					{
+						LONG lStride = 0;
+
+						LOG_INVOKE_MF_FUNCTION(MFGetStrideForBitmapInfoHeader,
+							aMFVideoFormat.Data1,
+							lWidthInPixels,
+							&lStride);
+
+						LOG_INVOKE_MF_METHOD(SetUINT32,
+							lnewMediaType,
+							MF_MT_DEFAULT_STRIDE,
+							(UINT32)lStride);
+
+					} while (false);
+
+					lresult = S_OK;
+
+					*aPtrPtrMediaSinkMediaType = lnewMediaType.detach();
 
 				} while (false);
 
