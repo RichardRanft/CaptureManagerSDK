@@ -78,7 +78,7 @@ namespace CaptureManager
 					break;
 				}
 
-				CComPtrCustom<IUnknown> lCoLogPrintOutControl(new (std::nothrow) CoLogPrintOut());
+				CComPtrCustom<CoLogPrintOut> lCoLogPrintOutControl(new (std::nothrow) CoLogPrintOut());
 
 				if (!lCoLogPrintOutControl)
 				{

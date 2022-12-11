@@ -29,6 +29,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +44,7 @@ namespace CaptureManagerToCSharpProxy
         private class CaptureManagerNative
         {
             CaptureManagerLibrary.ILogPrintOutControl mILogPrintOutControl;
+            CaptureManagerLibrary.ILogPrintOutCallbackControl mILogPrintOutCallbackControl;
             CaptureManagerLibrary.ICaptureManagerControl mICaptureManagerControl;
 
             public CaptureManagerLibrary.ILogPrintOutControl ILogPrintOutControl
@@ -71,19 +73,60 @@ namespace CaptureManagerToCSharpProxy
                         if (mILogPrintOutControl == null)
                             throw new NullReferenceException("mILogPrintOutControl is null");
 
+                        mILogPrintOutCallbackControl = mILogPrintOutControl as CaptureManagerLibrary.ILogPrintOutCallbackControl;
 
-                        mILogPrintOutControl.addPrintOutDestination(
-                            (int)CaptureManagerLibrary.LogLevel.ERROR_LEVEL,
-                            "Log.txt");
+                        do
+                        {
+                            try
+                            {
 
-                        mILogPrintOutControl.addPrintOutDestination(
-                            (int)CaptureManagerLibrary.LogLevel.INFO_LEVEL,
-                            "Log.txt");
+                                object lUnknown;
+
+                                mILogPrintOutCallbackControl.getIConnectionPointContainer(
+                                    typeof(IConnectionPointContainer).GUID,
+                                    out lUnknown);
+
+                                if (lUnknown == null)
+                                    break;
+
+                                var lConnectionPointContainer = lUnknown as IConnectionPointContainer;
+
+                                if (lConnectionPointContainer == null)
+                                    break;
+
+                                IConnectionPoint lConnectionPoint = null;
+
+                                lConnectionPointContainer.FindConnectionPoint(
+                                    typeof(CaptureManagerLibrary.ILogPrintOutCallback).GUID,
+                                    out lConnectionPoint);
+
+                                if (lConnectionPoint == null)
+                                    break;
+
+                                int lId = 0;
+
+                                lConnectionPoint.Advise(
+                                    new LogPrintOutCallback((aLogLevel, aMessage) => {
+
+                                        LogManager.getInstance().writeLog(aLogLevel, aMessage);
+
+                                    }),
+                                    out lId);
+
+                            }
+                            catch (Exception exc)
+                            {
+                                LogManager.getInstance().write(exc.Message);
+                            }
+
+                        } while (false);
+                        
 
                         mICaptureManagerControl = new CaptureManagerLibrary.CoCaptureManager();
 
                         if (mICaptureManagerControl == null)
                             throw new NullReferenceException("mCaptureManagerNative.ICaptureManagerControl is null");
+
                     }
                     catch (Exception exc)
                     {
@@ -144,6 +187,55 @@ namespace CaptureManagerToCSharpProxy
 
                         if (mILogPrintOutControl == null)
                             throw new NullReferenceException("mILogPrintOutControl is null");
+
+                        mILogPrintOutCallbackControl = mILogPrintOutControl as CaptureManagerLibrary.ILogPrintOutCallbackControl;
+
+                        do
+                        {
+                            try
+                            {
+
+                                lUnknown = null;
+
+                                mILogPrintOutCallbackControl.getIConnectionPointContainer(
+                                    typeof(IConnectionPointContainer).GUID,
+                                    out lUnknown);
+
+                                if (lUnknown == null)
+                                    break;
+
+                                var lConnectionPointContainer = lUnknown as IConnectionPointContainer;
+
+                                if (lConnectionPointContainer == null)
+                                    break;
+
+                                IConnectionPoint lConnectionPoint = null;
+
+                                lConnectionPointContainer.FindConnectionPoint(
+                                    typeof(CaptureManagerLibrary.ILogPrintOutCallback).GUID,
+                                    out lConnectionPoint);
+
+                                if (lConnectionPoint == null)
+                                    break;
+
+                                int lId = 0;
+
+                                lConnectionPoint.Advise(
+                                    new LogPrintOutCallback((aLogLevel, aMessage) => {
+
+                                        LogManager.getInstance().writeLog(aLogLevel, aMessage);
+
+                                    }),
+                                    out lId);
+
+                            }
+                            catch (Exception exc)
+                            {
+                                LogManager.getInstance().write(exc.Message);
+                            }
+
+                        } while (false);
+
 
                         lGetClassObject(
                             CLSID_CoCaptureManager,

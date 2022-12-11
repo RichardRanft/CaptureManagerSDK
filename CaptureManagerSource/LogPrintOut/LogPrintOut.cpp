@@ -24,6 +24,9 @@ SOFTWARE.
 
 #include <fstream>
 #include "LogPrintOut.h"
+#include "LogPrintOut_wostream.h"
+#include "../Common/Singleton.h"
+#include "../Common/Common.h"
 #include "../Common/Config.h"
 
 namespace CaptureManager
@@ -34,6 +37,18 @@ namespace CaptureManager
 #ifndef COMMERCIAL
 		addPtrLogPrintOutStream(LogPrintOut::INFO_LEVEL, &std::wcout, false);
 #endif
+
+		addPtrLogPrintOutStream(
+			LogPrintOut::INFO_LEVEL,
+			&Singleton<LogPrintOut_wostream>::getInstance(),
+			false
+		);	
+
+		addPtrLogPrintOutStream(
+			LogPrintOut::ERROR_LEVEL,
+			&Singleton<LogPrintOut_wostream>::getInstance(),
+			false
+		);
 	}
 
 	LogPrintOut::~LogPrintOut()
@@ -273,6 +288,11 @@ namespace CaptureManager
 		std::lock_guard<std::mutex> llock(mLogPrintOutMutex);
 
 		return releaseStream(aPtrWOStream);
+	}
+
+	void LogPrintOut::addCallbackInner(IUnknown* aPtrUnkCallbackInner)
+	{
+		Singleton<LogPrintOut_wostream>::getInstance().addCallbackInner(aPtrUnkCallbackInner);
 	}
 
 

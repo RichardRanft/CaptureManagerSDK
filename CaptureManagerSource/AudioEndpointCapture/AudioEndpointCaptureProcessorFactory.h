@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include "../Common/IInnerCaptureProcessor.h"
 #include "../Common/ComPtrCustom.h"
 

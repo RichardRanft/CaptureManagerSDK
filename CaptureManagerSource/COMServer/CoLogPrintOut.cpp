@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "CoLogPrintOut.h"
 #include "../LogPrintOut/LogPrintOut.h"
+#include "../Common/Singleton.h"
 
 
 namespace CaptureManager
@@ -39,6 +40,30 @@ namespace CaptureManager
 		
 		CoLogPrintOut::CoLogPrintOut()
 		{
+
+			HRESULT lresult(E_NOTIMPL);
+
+			do
+			{
+
+				mLogPrintOutCallbackInner = CComPtrCustom<LogPrintOutCallbackInner>(new (std::nothrow) LogPrintOutCallbackInner);
+
+				LOG_CHECK_PTR_MEMORY(mLogPrintOutCallbackInner);
+
+				mConnectionPointContainer = new (std::nothrow) ConnectionPointContainer();
+
+				LOG_CHECK_PTR_MEMORY(mConnectionPointContainer);
+
+				mConnectionPointContainer->Release();
+
+				LOG_INVOKE_POINTER_METHOD(mConnectionPointContainer, addConnectionPoint,
+					new (std::nothrow) ConnectionPoint<LogPrintOutCallbackInner, ILogPrintOutCallback>(
+						__uuidof(ILogPrintOutCallback),
+						mLogPrintOutCallbackInner));
+
+				LogPrintOut::getInstance().addCallbackInner(mLogPrintOutCallbackInner);
+
+			} while (false);
 		}
 
 		CoLogPrintOut::~CoLogPrintOut()
@@ -153,6 +178,42 @@ namespace CaptureManager
 			} while (false);
 
 			return lresult;
+		}
+
+		STDMETHODIMP_(HRESULT __stdcall) CoLogPrintOut::getIConnectionPointContainer(REFIID aREFIID, IUnknown** aPtrPtrControl)
+		{
+
+			HRESULT lresult(E_NOTIMPL);
+
+			do
+			{
+				LOG_CHECK_PTR_MEMORY(aPtrPtrControl);
+
+				lresult = E_NOINTERFACE;
+
+				if (aREFIID == __uuidof(IConnectionPointContainer))
+				{
+
+					LOG_CHECK_PTR_MEMORY(mConnectionPointContainer);
+
+					LOG_INVOKE_POINTER_METHOD(mConnectionPointContainer, QueryInterface,
+						aREFIID,
+						(void**)aPtrPtrControl);
+				}
+
+			} while (false);
+
+			return lresult;
+		}
+
+		STDMETHODIMP_(HRESULT __stdcall) CoLogPrintOut::setVerbose(
+			/* [in] */ DWORD aLevelType,
+			/* [in] */ boolean aState)
+		{
+			if (mLogPrintOutCallbackInner)
+				mLogPrintOutCallbackInner->setVerbose(aLevelType, aState);
+
+				return S_OK;
 		}
 
 
@@ -318,13 +379,6 @@ namespace CaptureManager
 
 					break;
 				}
-
-
-				//std::wstringstream lwstringstream;
-
-				//lwstringstream << lLevelType << lFilePath;
-
-				//MessageBox(NULL, lwstringstream.str().c_str(), L"lFirstArg.vt", 0);
 
 				lresult = this->setVerbose(
 					lLevelType,

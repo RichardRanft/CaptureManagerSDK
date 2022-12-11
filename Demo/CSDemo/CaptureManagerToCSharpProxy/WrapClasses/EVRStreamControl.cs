@@ -233,8 +233,12 @@ namespace CaptureManagerToCSharpProxy.WrapClasses
                 lptr = Marshal.GetIUnknownForObject(aPtrEVROutputNode);
 
             long unkPtr = lptr.ToInt64();
-            
+
+            object[] largs = new object[] { unkPtr, aLeft, aRight, aTop, aBottom };
+
             object[] largs1 = new object[] { IntPtr.Zero, unkPtr, aLeft, aRight, aTop, aBottom };
+
+            object[] largs2 = new object[] { IntPtr.Zero, lptr.ToInt64(), unkPtr, aLeft, aRight, aTop, aBottom };
 
             return await Task.Run(() =>
             {
@@ -261,7 +265,40 @@ namespace CaptureManagerToCSharpProxy.WrapClasses
                     }
                     catch (Exception exc)
                     {
-                        LogManager.getInstance().write(exc.Message);
+                        if (mIUnknown != null)
+                        {
+                            try
+                            {
+
+                                Win32NativeMethods.Invoke<object>(mIUnknown, Win32NativeMethods.InvokeFlags.DISPATCH_METHOD, "setPosition", largs);
+
+                                lresult = true;
+                            }
+                            catch (Exception)
+                            {
+                                try
+                                {
+                                    Win32NativeMethods.Invoke<object>(mIUnknown, Win32NativeMethods.InvokeFlags.DISPATCH_METHOD, "setPosition", largs1);
+
+                                    lresult = true;
+                                }
+                                catch (Exception)
+                                {
+                                    try
+                                    {
+                                        Win32NativeMethods.Invoke<object>(mIUnknown, Win32NativeMethods.InvokeFlags.DISPATCH_METHOD, "setPosition", largs2);
+
+                                        lresult = true;
+                                    }
+                                    catch (Exception exc1)
+                                    {
+                                        LogManager.getInstance().write(exc1.Message);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                            LogManager.getInstance().write(exc.Message);
                     }
 
                 } while (false);

@@ -1,4 +1,4 @@
-﻿/*
+/*
 MIT License
 
 Copyright(c) 2020 Evgeny Pereguda
@@ -22,41 +22,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using CaptureManagerToCSharpProxy.Interfaces;
-using CaptureManagerToCSharpProxy.WrapClasses;
+#pragma once
 
-namespace CaptureManagerToCSharpProxy
+#include <iostream>
+#include <memory>
+
+#include "../Common/BaseUnknown.h"
+#include "../Common/ComPtrCustom.h"
+#include "ILogPrintOutAsyncCallback.h"
+
+namespace CaptureManager
 {
-    public delegate void WriteDelegate(string sender);
+	class LogPrintOut_wostream: public std::wostream, public std::wstreambuf
+	{
+	public:
 
-    public class LogManager
-    {
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly")]
-        public event WriteDelegate WriteDelegateEvent;
+		LogPrintOut_wostream();
 
-        public event WriteLogDelegate WriteLogDelegateEvent;
+		virtual ~LogPrintOut_wostream();
 
-        private static LogManager mInstance = new LogManager();
+		void addCallbackInner(IUnknown* aPtrUnkCallbackInner);
 
-        private LogManager() { }
+	protected:
+		virtual int sync();
 
-        public static LogManager getInstance()
-        {
-            return mInstance;
-        }
+		virtual std::wstreambuf::int_type overflow(std::wstreambuf::int_type value);
 
-        internal void write(string aMessage) 
-        {
-            WriteDelegateEvent?.Invoke(aMessage);
-        }
+		virtual std::wstreambuf::int_type underflow();
 
-        internal void writeLog(LogLevel aLogLevel, string aMessage)
-        {
-            WriteLogDelegateEvent?.Invoke(aLogLevel, aMessage);
-        }
-    }
+
+	private:
+		int m_size;
+	    std::unique_ptr<wchar_t[]> current_line;
+
+		DWORD mSyncWorkerQueue;
+
+		CComPtrCustom<ILogPrintOutAsyncCallback> mLogPrintOutAsyncCallback;
+	};
+
 }

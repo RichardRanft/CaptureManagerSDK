@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CaptureManagerToCSharpProxy</RootNamespace>
     <AssemblyName>CaptureManagerToCSharpProxy</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -167,6 +167,7 @@
     <Compile Include="Interfaces\IWebCamControl.cs" />
     <Compile Include="Interfaces\IWebCamControlAsync.cs" />
     <Compile Include="LogManager.cs" />
+    <Compile Include="WrapClasses\LogPrintOutCallback.cs" />
     <Compile Include="WrapClasses\MixerNodeFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WrapClasses\RenderingControl.cs" />

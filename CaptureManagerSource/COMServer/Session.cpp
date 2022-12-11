@@ -42,108 +42,6 @@ namespace CaptureManager
 			GetSessionDescriptor = CloseSession + 1,
 			GetIConnectionPointContainer = GetSessionDescriptor + 1
 		};
-				
-		STDMETHODIMP Session::EnumConnections::Next(
-			ULONG cConnections,
-			LPCONNECTDATA rgcd,
-			ULONG *pcFetched)
-		{
-
-			HRESULT lresult;
-
-			do
-			{
-				LOG_CHECK_PTR_MEMORY(pcFetched);
-
-				ULONG lFetched = 0;
-
-				auto lter = this->mSessionCallbackInner->mCallbackMassive.begin();
-
-				while (lFetched < cConnections && mCurrentPosition < this->mSessionCallbackInner->mCallbackMassive.size())
-				{
-					(*lter).second->QueryInterface(IID_PPV_ARGS(&rgcd[lFetched].pUnk));
-
-					rgcd[lFetched].dwCookie = (*lter).first;
-
-					lFetched++;
-
-					mCurrentPosition++;
-
-					lter++;
-				}
-
-				*pcFetched = lFetched;
-
-				lresult = lFetched == cConnections ? S_OK : S_FALSE;
-
-			} while (false);
-
-			return lresult;
-		}
-
-		STDMETHODIMP Session::EnumConnections::Skip(
-			ULONG cConnections)
-		{
-
-			HRESULT lresult;
-
-			do
-			{
-				ULONG lSkipped = 0;
-
-				while (lSkipped < cConnections &&
-					mCurrentPosition < this->mSessionCallbackInner->mCallbackMassive.size())
-				{
-					lSkipped++;
-
-					mCurrentPosition++;
-				}
-
-				if (lSkipped == cConnections)
-					lresult = S_OK;
-				else
-					lresult = S_FALSE;
-
-			} while (false);
-
-			return lresult;
-		}
-
-		STDMETHODIMP Session::EnumConnections::Reset()
-		{
-
-			HRESULT lresult;
-
-			do
-			{
-				mCurrentPosition = 0;
-
-				lresult = S_OK;
-
-			} while (false);
-
-			return lresult;
-		}
-
-		STDMETHODIMP Session::EnumConnections::Clone(IEnumConnections **ppEnum)
-		{
-
-			HRESULT lresult(E_FAIL);
-
-			do
-			{
-				LOG_CHECK_PTR_MEMORY(ppEnum);
-
-				*ppEnum = new (std::nothrow) EnumConnections(this->mSessionCallbackInner, mCurrentPosition);
-
-				if (*ppEnum != nullptr)
-					lresult = S_OK;
-
-			} while (false);
-
-			return lresult;
-		}
-
 
 		HRESULT Session::init(VARIANT aArrayPtrSourceNodesOfTopology)
 		{
@@ -207,7 +105,7 @@ namespace CaptureManager
 				mConnectionPointContainer->Release();
 
 				LOG_INVOKE_POINTER_METHOD(mConnectionPointContainer, addConnectionPoint, 
-					new (std::nothrow) ConnectionPoint(
+					new (std::nothrow) ConnectionPoint<SessionCallbackInner, ISessionCallback>(
 					__uuidof(ISessionCallback),
 					mSessionCallback));
 								

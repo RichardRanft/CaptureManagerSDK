@@ -56,6 +56,8 @@ namespace CaptureManager
 		bool releaseLogPrintOutStream(
 			std::wostream* aPtrWOStream);
 
+		void addCallbackInner(IUnknown* aPtrUnkCallbackInner);
+
 		template <typename... Args>
 		inline bool printOutln(
 			Level aLevel,

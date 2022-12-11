@@ -112,6 +112,48 @@ interface ILogPrintOutControl : IDispatch
 
 [
 	object,
+	uuid(64476D35-6915-4522-A548-0AE947CB2FA7),
+	oleautomation,
+	helpstring("Control interface for controlling of printing of the log information."),
+	dual
+]
+interface ILogPrintOutCallbackControl : IDispatch
+{
+	[
+		helpstring("Get IConnectionPointContainer interface."),
+		id(1)
+	]
+	HRESULT getIConnectionPointContainer(
+		[in] REFIID aREFIID,
+		[out] IUnknown** aPtrPtrControl);
+
+	[
+		helpstring("Set state of print out of log."),
+		id(2)
+	]
+	HRESULT setVerbose(
+		[in] DWORD aLevelType,
+		[in] boolean aState);
+};
+
+[
+	object,
+	uuid(251E71F6-8C02-475F-B300-216D560426B2),
+	oleautomation,
+	helpstring("Interface for processing callback of log.")
+]
+interface ILogPrintOutCallback : IUnknown
+{
+	[
+		helpstring("Method for callback invoking.")
+	]
+	HRESULT invoke(
+		[in] DWORD aLevelType,
+		[in] BSTR aPtrLogString);
+};
+
+[
+	object,
 	uuid(1276CC17-BCA8-4200-87BB-7180EF562447),
 	oleautomation,
 	helpstring("Interface for controlling of sources."),
@@ -1227,6 +1269,8 @@ library CaptureManagerLibrary
 	coclass CoLogPrintOut
 	{
 		[default] interface ILogPrintOutControl;
+
+		interface ILogPrintOutCallbackControl;
 	};
 
 	[uuid(D5F07FB8-CE60-4017-B215-95C8A0DDF42A)]
@@ -1302,6 +1346,10 @@ library CaptureManagerLibrary
 	interface ISARSinkFactory;
 
 	interface ISARVolumeControl;
+
+	interface ILogPrintOutCallbackControl;
+
+	interface ILogPrintOutCallback;
 
 	enum LogLevel;
 
