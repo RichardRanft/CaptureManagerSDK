@@ -54,6 +54,8 @@ namespace CaptureManager
 				ZeroMemory(&mDesktopCoordinates, sizeof(mDesktopCoordinates));
 
 				fillVectorScreenCaptureConfigs(mVectorScreenCaptureConfigs);
+
+				mIsFlipStride = TRUE;
 			}
 
 			ScreenCaptureProcessorGDI::ScreenCaptureProcessorGDI(RECT aWorkArea) :
@@ -68,6 +70,8 @@ namespace CaptureManager
 				mDesktopCoordinates = mWorkArea;
 
 				fillVectorScreenCaptureConfigs(mVectorScreenCaptureConfigs);
+
+				mIsFlipStride = TRUE;
 			}
 
 			HRESULT ScreenCaptureProcessorGDI::check()
@@ -591,10 +595,12 @@ namespace CaptureManager
 					drawOn(mDesktopCoordinates, mDesktopCompatibleHDC);
 
 					BitBlt(mDestCompatibleHDC, 0, 0, mWidth, mHeight, mDesktopCompatibleHDC, lLeftOffset, lTopOffset, SRCCOPY);
+
+					aPtrData += (mHeight - 1) * mStride;
 																				
 					LOG_INVOKE_MF_FUNCTION(MFCopyImage,
 						aPtrData,
-						mStride,
+						-mStride,
 						mPtrBits,
 						mStride,
 						mStride,

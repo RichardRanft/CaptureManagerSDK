@@ -2120,7 +2120,7 @@ namespace CaptureManager
 					LOG_INVOKE_MF_METHOD(GetTopoNodeID,
 						aPtrUpStreamTopologyNode,
 						&lSourceTopoID);
-					
+										
 					CollectionOfIDs lCollectionOfIDs;
 
 					lCollectionOfIDs.mListOfSourceIDs.push_back(lSourceTopoID);

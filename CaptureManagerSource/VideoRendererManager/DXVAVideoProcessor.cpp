@@ -36,7 +36,7 @@ SOFTWARE.
 
 #define STREAM_STRETCH_ID 0
 
-const D3DFORMAT VIDEO_MAIN_FORMAT = D3DFMT_YUY2;
+const D3DFORMAT VIDEO_MAIN_FORMAT = D3DFMT_X8R8G8B8;// D3DFMT_YUY2;
 
 namespace CaptureManager
 {
@@ -2452,6 +2452,22 @@ namespace CaptureManager
 							lSubStreamSrcRect.bottom = lDesc1.Height;
 
 
+							if (m_InputStreams.size() > 0)
+							{
+								auto lItem = m_InputStreams[0];
+
+								lSubStreamSrcRect.left = (LONG)(lItem.mSrcVideoNormalizedRect.left * (float)lDesc1.Width);
+
+								lSubStreamSrcRect.right = (LONG)(lItem.mSrcVideoNormalizedRect.right * (float)lDesc1.Width);
+
+								lSubStreamSrcRect.top = (LONG)(lItem.mSrcVideoNormalizedRect.top * (float)lDesc1.Height);
+
+								lSubStreamSrcRect.bottom = (LONG)(lItem.mSrcVideoNormalizedRect.bottom * (float)lDesc1.Height);
+							}
+
+
+
+							auto lOutputTargetRect = mOutputTargetRect;
 
 							float lPropSrc = (float)lDesc1.Width / (float)lDesc1.Height;
 
@@ -2475,13 +2491,13 @@ namespace CaptureManager
 								
 								LONG lborder = (LONG)(lDestDesc.Height - lidealHeight) >> 1;
 
-								lSubStreamSrcRect.top = lborder;
+								lOutputTargetRect.top = lborder;
 
-								lSubStreamSrcRect.bottom = lidealHeight + lborder;
+								lOutputTargetRect.bottom = lidealHeight + lborder;
 
-								lSubStreamSrcRect.left = 0;
+								lOutputTargetRect.left = 0;
 
-								lSubStreamSrcRect.right = lDestDesc.Width;
+								lOutputTargetRect.right = lDestDesc.Width;
 							}
 
 
@@ -2493,7 +2509,7 @@ namespace CaptureManager
 
 							// DXVA2_VideoProcess_StretchX, Y
 
-							samples[lStreamIndex].DstRect = mOutputTargetRect;
+							samples[lStreamIndex].DstRect = lOutputTargetRect;
 
 							// DXVA2_VideoProcess_PlanarAlpha
 							samples[lStreamIndex].PlanarAlpha = DXVA2FloatToFixed(float(0xFF) / 0xFF);

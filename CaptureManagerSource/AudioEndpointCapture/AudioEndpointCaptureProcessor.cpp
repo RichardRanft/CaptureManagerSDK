@@ -43,8 +43,8 @@ namespace CaptureManager
 			using namespace Core;
 
 			AudioEndpointCaptureProcessor::AudioEndpointCaptureProcessor() :
-				//CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
-				CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Audio"),
+				CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Pro Audio"),
+				//CaptureInvoker(AVRT_PRIORITY_AvrtManager::AVRT_PRIORITY_CRITICAL_AvrtManager, L"Audio"),
 				mAudioClient(nullptr),
 				mPtrAudioCaptureClient(nullptr),
 				mPtrMMDevice(nullptr),
@@ -570,15 +570,24 @@ namespace CaptureManager
 
 							LOG_INVOKE_MF_METHOD(SetCurrentLength, lMediaBuffer, mExpectedBufferSize);
 						}
-						
-						lSampleTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();											
 
-						if (mPrevSampleTime > 0)
+						if (mInvokeMode == INVOKEMODE::EVENT)
 						{
-							lSampleDuration = lSampleTime - mPrevSampleTime;
-						}
+							lSampleTime = mPrevSampleTime;
 
-						mPrevSampleTime = lSampleTime;
+							mPrevSampleTime = lSampleTime + mSampleDuration;
+						}
+						else
+						{
+							lSampleTime = MediaFoundation::MediaFoundationManager::MFGetSystemTime();
+
+							if (mPrevSampleTime > 0)
+							{
+								lSampleDuration = lSampleTime - mPrevSampleTime;
+							}
+
+							mPrevSampleTime = lSampleTime;
+						}
 					}
 										
 					LOG_INVOKE_MF_METHOD(AddBuffer, lSample, lMediaBuffer);

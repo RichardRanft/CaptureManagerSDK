@@ -195,12 +195,14 @@ namespace CaptureManager
 
 			UINT g_Flags = 0;
 			
-			ScreenCaptureProcessorIDXGIOutputDuplication::ScreenCaptureProcessorIDXGIOutputDuplication()				
+			ScreenCaptureProcessorIDXGIOutputDuplication::ScreenCaptureProcessorIDXGIOutputDuplication()
 			{
 				if (Singleton<ConfigManager>::getInstance().isWindows10_Or_Greater())
 					mIsDirectX11 = true;
 				else
 					mIsDirectX11 = false;
+
+				mIsFlipStride = TRUE;
 			}
 			
 			ScreenCaptureProcessorIDXGIOutputDuplication::~ScreenCaptureProcessorIDXGIOutputDuplication()

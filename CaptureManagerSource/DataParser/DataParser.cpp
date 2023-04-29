@@ -59,8 +59,8 @@ namespace CaptureManager
 	EXTERN_GUID(MEDIASUBTYPE_PHOTOMOTION,
 		0x1d4a45f2, 0xe5f6, 0x4b44, 0x83, 0x88, 0xf0, 0xae, 0x5c, 0x0e, 0x0c, 0x37);
 
-	//EXTERN_GUID(MFVideoFormat_Intel®_Hardware_MediaType_One,
-	//	0x3231564E, 0x3961, 0x42AE, 0xBA, 0x67, 0xFF, 0x47, 0xCC, 0xC1, 0x3E, 0xED);
+	EXTERN_GUID(MFVideoFormat_Intel_Hardware_MediaType_One,
+		0x3231564E, 0x3961, 0x42AE, 0xBA, 0x67, 0xFF, 0x47, 0xCC, 0xC1, 0x3E, 0xED);
 
 	EXTERN_GUID(MF_MT_FIRST_UNKNOWN,
 		0xC496F370, 0x2F8B, 0x4F51, 0xAE, 0x46, 0x9C, 0xFC, 0x1B, 0xC8, 0x2A, 0x47);
@@ -95,8 +95,30 @@ namespace CaptureManager
 
 
 
-
 	DEFINE_MEDIATYPE_GUID(MFVideoFormat_Y16, FCC('Y16 '));
+
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_NV21_Double, FCC('NV21'));
+
+#define MFVideoFormat_NV21 MFVideoFormat_NV21_Double
+
+	DEFINE_GUID(MF_DEVICESTREAM_ATTRIBUTE_FRAMESOURCE_TYPES_Double,
+		0x17145fd1, 0x1b2b, 0x423c, 0x80, 0x1, 0x2b, 0x68, 0x33, 0xed, 0x35, 0x88);
+
+#define MF_DEVICESTREAM_ATTRIBUTE_FRAMESOURCE_TYPES MF_DEVICESTREAM_ATTRIBUTE_FRAMESOURCE_TYPES_Double
+
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L8_Double, D3DFMT_L8);
+
+#define MFVideoFormat_L8 MFVideoFormat_L8_Double
+
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_L16_Double, D3DFMT_L16);
+
+#define MFVideoFormat_L16 MFVideoFormat_L16_Double
+
+	DEFINE_MEDIATYPE_GUID(MFVideoFormat_D16_Double, D3DFMT_D16);
+
+#define MFVideoFormat_D16 MFVideoFormat_D16_Double
+
+
 
 
 	namespace
@@ -336,7 +358,7 @@ namespace CaptureManager
 		IF_EQUAL_RETURN(guid, MFVideoFormat_YV12); //     FCC('YV12')
 		IF_EQUAL_RETURN(guid, MFVideoFormat_YVYU);
 		IF_EQUAL_RETURN(guid, MEDIASUBTYPE_PHOTOMOTION);
-		//IF_EQUAL_RETURN(guid, MFVideoFormat_Intel®_Hardware_MediaType_One);
+		IF_EQUAL_RETURN(guid, MFVideoFormat_Intel_Hardware_MediaType_One);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_Y16);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_NV21);
 		IF_EQUAL_RETURN(guid, MFVideoFormat_D16);

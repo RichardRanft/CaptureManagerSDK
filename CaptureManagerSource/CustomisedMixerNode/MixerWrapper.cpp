@@ -29,6 +29,7 @@ SOFTWARE.
 #include "../Common/GUIDs.h"
 #include "../MediaFoundationManager/MediaFoundationManager.h"
 #include "Direct3D11VideoMixer.h"
+#include "Direct3D9VideoMixer.h"
 #include "AudioMixerNode.h"
 #include "../Common/Singleton.h"
 #include "../ConfigManager/ConfigManager.h"
@@ -102,35 +103,74 @@ namespace CaptureManager
 
 					if (lMajorType == MFMediaType_Video)
 					{
-						Mixer::Direct3D11VideoMixer::createProcessor(&lMixerTransform, Singleton<ConfigManager>::getInstance().getMaxVideoRenderStreamCount());
-
-						LOG_CHECK_PTR_MEMORY(lMixerTransform);
-
 						do
 						{
-							CComPtrCustom<IUnknown> lInputStreamDeviceManager;
+							Mixer::Direct3D11VideoMixer::createProcessor(&lMixerTransform, Singleton<ConfigManager>::getInstance().getMaxVideoRenderStreamCount());
 
-							LOG_INVOKE_MF_METHOD(GetUnknown, aPtrMediaTypeType,
-								CM_DeviceManager,
-								IID_PPV_ARGS(&lInputStreamDeviceManager));
+							LOG_CHECK_PTR_MEMORY(lMixerTransform);
 
-							lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, 0);
+							do
+							{
+								CComPtrCustom<IUnknown> lInputStreamDeviceManager;
 
-							lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)lInputStreamDeviceManager.get());
+								LOG_INVOKE_MF_METHOD(GetUnknown, aPtrMediaTypeType,
+									CM_DeviceManager,
+									IID_PPV_ARGS(&lInputStreamDeviceManager));
 
-							lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, 0);
 
-						} while (false);		
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)lInputStreamDeviceManager.get());
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+
+							} while (false);
+
+							if (FAILED(lresult))
+							{
+								LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_SET_D3D_MANAGER, 0);
+
+								LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_COMMAND_MARKER,
+									Mixer::Direct3D11VideoMixer::COMMAND_MARKER_VIDEO_MIXER::INNER_DIRECTX_DEVICE);
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+							}
+
+						} while (false);
 
 						if (FAILED(lresult))
 						{
-							LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_SET_D3D_MANAGER, 0);
+							lMixerTransform.Release();
 
-							LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_COMMAND_MARKER, 
-								Mixer::Direct3D11VideoMixer::COMMAND_MARKER_VIDEO_MIXER::INNER_DIRECTX_DEVICE);
-							
-							lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
-						}
+							Mixer::Direct3D9VideoMixer::createProcessor(&lMixerTransform, Singleton<ConfigManager>::getInstance().getMaxVideoRenderStreamCount());
+
+							LOG_CHECK_PTR_MEMORY(lMixerTransform);
+
+							do
+							{
+								CComPtrCustom<IUnknown> lInputStreamDeviceManager;
+
+								LOG_INVOKE_MF_METHOD(GetUnknown, aPtrMediaTypeType,
+									CM_DeviceManager,
+									IID_PPV_ARGS(&lInputStreamDeviceManager));
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, 0);
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, (ULONG_PTR)lInputStreamDeviceManager.get());
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+
+							} while (false);
+
+							if (FAILED(lresult))
+							{
+								LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_SET_D3D_MANAGER, 0);
+
+								LOG_INVOKE_MF_METHOD(ProcessMessage, lMixerTransform, MFT_MESSAGE_COMMAND_MARKER,
+									Mixer::Direct3D9VideoMixer::COMMAND_MARKER_VIDEO_MIXER::INNER_DIRECTX_DEVICE);
+
+								lMixerTransform->ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+							}
+						}						
 					}
 					else if (lMajorType == MFMediaType_Audio)
 					{

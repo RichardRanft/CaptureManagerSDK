@@ -52,7 +52,8 @@ namespace CaptureManager
 				mCurrentGrabResult(S_OK),
 				mFirstInvoke(true),
 				mIsBlocked(true),
-				mIsDirectX11(false)
+				mIsDirectX11(false),
+				mIsFlipStride(FALSE)
 			{
 				fillVectorScreenCaptureConfigs(mVectorScreenCaptureConfigs);
 
@@ -1095,6 +1096,17 @@ namespace CaptureManager
 						MF_MT_FRAME_RATE_RANGE_MIN,
 						aScreenCaptureConfig.mVideoFPS,
 						1);
+
+					if (mIsFlipStride != FALSE)
+					{
+						INT32 lStride = 0;
+
+						LOG_INVOKE_MF_METHOD(GetUINT32, lVideoMediaType, MF_MT_DEFAULT_STRIDE, (UINT32*)&lStride);
+
+						lStride = -lStride;
+
+						LOG_INVOKE_MF_METHOD(SetUINT32, lVideoMediaType, MF_MT_DEFAULT_STRIDE, UINT32(lStride));
+					}
 
 					*aPtrPtrMediaType = lVideoMediaType.detach();
 

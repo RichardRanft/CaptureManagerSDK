@@ -174,6 +174,8 @@ namespace CaptureManager
 
 				int mStride;
 
+				BOOL mIsFlipStride;
+
 				RECT mScreenRect;
 
 				HRESULT mCurrentGrabResult;

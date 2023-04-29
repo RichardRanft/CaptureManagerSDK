@@ -30,9 +30,7 @@ namespace CaptureManager
 					IMixerStreamPositionControl,
 					IStreamFilterControl
 					>
-				{
-
-
+				{					
 					struct StreamInfo
 					{
 						CComPtrCustom<IMFMediaType> mInputMediaType;
@@ -66,8 +64,7 @@ namespace CaptureManager
 							mAlpha = 1.0f;
 						}
 					};
-
-
+					
 					std::unordered_map<DWORD, StreamInfo > m_InputStreams;
 
 				public:
